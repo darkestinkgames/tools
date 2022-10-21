@@ -37,13 +37,13 @@ end
 
 -- -- -- >>> нове
 
-local function newCell(gx,gy, name)
+local function newCell(gx,gy, tile)
   local key = toKey(gx, gy)
   -- print(key)
   ---@class map.cell
   local obj = {
     key   = key,
-    tile  = name,  ---@type "plain"|"water"
+    tile  = tile,  ---@type "plain"|"water"
     unit  = nil,   ---@type map.unit
   }
   obj.gx, obj.gy = gx, gy
@@ -121,14 +121,20 @@ local function getPt(ppGrid,cell) ---@param cell map.cell
 end
 
 local function initPathGrid(pp,mov)end
-local function initPool(...)
-  local list, pool = {...}, {}
+local function initPool(max, list)
+  local pool = {}
+  assert( #list > 0, "No pattern has given!" )
   for i = 1, #list, 2 do
     local tile, count = list[i], list[i+1]
-    assert( type(tile) == "string",  ("The `tile` (%s) is wrong pattern! Should be: initPool(tile, count, ...)"):format(tile)   )
-    assert( type(count) == "string", ("The `count` (%s) is wrong pattern! Should be: initPool(tile, count, ...)"):format(count) )
+    assert( type(tile) == "string",  ("The `tile` (%s) should be a `string`"):format(tile)    )
+    assert( type(count) == "number", ("The `count` (%s) should be a `number`!"):format(count) )
     for f = 1, count
     do pool[#pool+1] = tile end
+  end
+  local i = 1
+  while max > i do
+    pool[#pool+1] = pool[i]
+    i = i + 1
   end
   return pool
 end
@@ -157,15 +163,28 @@ local function addQueue(unit,tile)end
 
 local main = {}
 
-function main.new(w,h, ...)
+function main.new(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
-  local pattern = {...}
   cGrid = {}
   for gy = 1, h do
     cGrid[gy] = {}
     for gx = 1, w
     do cGrid[gy][gx] = newCell(gx,gy) end
+  end
+  -- uGrid = {}
+end
+function main.newRandom(w,h, ...)
+  assert( w, ("Wrong argument `w` (%s)!"):format(w) )
+  assert( h, ("Wrong argument `h` (%s)!"):format(w) )
+  local pool = initPool(w*h, {...})
+  cGrid = {}
+  for gy = 1, h do
+    cGrid[gy] = {}
+    for gx = 1, w do
+      local tile = table.remove(pool, math.random(#pool))
+      cGrid[gy][gx] = newCell(gx,gy, tile)
+    end
   end
   -- uGrid = {}
 end
