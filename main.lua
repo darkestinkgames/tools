@@ -5,8 +5,8 @@ local map = require 'code/map'
 -- -- -- >>>
 
 function love.load(...)
-  map.setTileRate(5, 1)
-  map.newRandom(12,9)
+  map.tileRate(4, 1)
+  map.newGridRandom(12,12)
   map.addUnit(1, 4)
   map.addUnit(1, 5)
   map.addUnit(2, 4)

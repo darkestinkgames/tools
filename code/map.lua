@@ -6,8 +6,8 @@ local tWidth, tHeight = 64, 48
 local width, height
 
 local tRate = { plain = 1, water = 1 }
-local cGrid  ---@type table<string, map.cell>
--- local uGrid  ---@type table<string, map.unit>
+local cGrid  ---@type table<string, map.cell[]>
+local uList  ---@type table<string, map.unit>
 
 local cSelected
 local uSelected
@@ -16,10 +16,13 @@ local uSelected
 -- -- -- >>> енумерашки
 
 local color_name = {
-  white = { 1, 1, 1 },
+  white  = { 1, 1, 1 },
 
-  plain = { .1, .25, .15 },
-  water = { .1, .15, .25 },
+  plain  = { .1, .25, .15 },
+  water  = { .1, .15, .25 },
+
+  [1]    = { .2, .8, .2 },
+  [2]    = { .8, .2, .2 },
 }
 
 
@@ -54,10 +57,10 @@ local function newCell(gx,gy, tile)
   return obj
 end
 local function newUnit(team, mov, cell)
-  assert( team,      ("Wrong argument `team` (%s)!"):format(team)    )
-  assert( mov,       ("Wrong argument `mov` (%s)!"):format(mov)      )
-  assert( cell,      ("Wrong argument `cell` (%s)!"):format(cell)    )
-  assert( cell.unit, ("The `cell` %s is occupied!"):format(cell.key) )
+  assert( team,          ("Wrong argument `team` (%s)!"):format(team)    )
+  assert( mov,           ("Wrong argument `mov` (%s)!"):format(mov)      )
+  assert( cell,          ("Wrong argument `cell` (%s)!"):format(cell)    )
+  assert( not cell.unit, ("The `cell` %s is occupied!"):format(cell.key) )
   ---@class map.unit
   local obj = {
     team   = team,  ---@type number
@@ -109,6 +112,9 @@ local function getCell(gx,gy)
   if not cGrid[gy] then return nil end
   return cGrid[gy][gx]
 end
+local function getRandomCell()
+  return getCell(math.random(width), math.random(height))
+end
 local function getCost(cell) ---@param cell map.cell
   assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
   if cell.unit then return nil end
@@ -157,7 +163,11 @@ local function drawHover()
     love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
   end
 end
-local function drawUnit(x,y)end
+local function drawUnit(unit) ---@param unit map.unit
+  local x,y = unit.cell.hx, unit.cell.hy
+  setColor(unit.team)
+  love.graphics.circle("fill", x,y, getRadius(.9))
+end
 local function drawPathGrid(unit)end
 local function drawPathLine(pp)end
 local function drawPathQueue(unit)end
@@ -169,7 +179,7 @@ local function addQueue(unit,tile)end
 
 local main = {}
 
-function main.setTileRate(plain, water)
+function main.tileRate(plain, water)
   assert(plain >= 0, "No negative numbers allowed!")
   assert(water >= 0, "No negative numbers allowed!")
   tRate.plain = plain or 0
@@ -177,20 +187,22 @@ function main.setTileRate(plain, water)
   local check_sum = tRate.plain + tRate.water
   assert(check_sum ~= 0, "Pattern is empty!")
 end
-function main.new(w,h)
+function main.newGrid(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
+  width, height = w, h
   cGrid = {}
   for gy = 1, h do
     cGrid[gy] = {}
     for gx = 1, w
     do cGrid[gy][gx] = newCell(gx,gy) end
   end
-  -- uGrid = {}
+  uList = {}
 end
-function main.newRandom(w,h)
+function main.newGridRandom(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
+  width, height = w, h
   local pool = initPool(w*h)
   cGrid = {}
   for gy = 1, h do
@@ -200,9 +212,21 @@ function main.newRandom(w,h)
       cGrid[gy][gx] = newCell(gx,gy, tile)
     end
   end
-  -- uGrid = {}
+  uList = {}
 end
-function main.addUnit(team, mov, x,y)end
+function main.addUnit(team, mov, x,y)
+  local cell
+  if x and y then
+    cell = getCell(x,y)
+  else
+    repeat cell = getRandomCell()
+    until not cell.unit
+  end
+  assert(cell, "The `cell` is missing!")
+  local unit = newUnit(team, mov, cell)
+  cell.unit, unit.cell = unit, cell
+  uList[#uList+1] = unit
+end
 function main.draw()
   -- грядка
   for gy, list in ipairs(cGrid) do for gx, cell in ipairs(cGrid[gy]) do
@@ -211,6 +235,9 @@ function main.draw()
   -- шляхогрядка юніта
   -- шлях від юніта до клітинки
   -- юніт
+  for index, unit in ipairs(uList) do
+    drawUnit(unit)
+  end
   -- підсвітка
   drawHover()
 end
