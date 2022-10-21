@@ -5,6 +5,7 @@ math.randomseed(os.time())
 local tWidth, tHeight = 64, 48
 local width, height
 
+local tRate = { plain = 1, water = 1 }
 local cGrid  ---@type table<string, map.cell>
 -- local uGrid  ---@type table<string, map.unit>
 
@@ -121,7 +122,12 @@ local function getPt(ppGrid,cell) ---@param cell map.cell
 end
 
 local function initPathGrid(pp,mov)end
-local function initPool(max, list)
+local function initPool(max)
+  local list = {}
+  for key, value in pairs(tRate) do
+    list[#list+1] = key
+    list[#list+1] = value
+  end
   local pool = {}
   assert( #list > 0, "No pattern has given!" )
   for i = 1, #list, 2 do
@@ -163,6 +169,14 @@ local function addQueue(unit,tile)end
 
 local main = {}
 
+function main.setTileRate(plain, water)
+  assert(plain >= 0, "No negative numbers allowed!")
+  assert(water >= 0, "No negative numbers allowed!")
+  tRate.plain = plain or 0
+  tRate.water = water or 0
+  local check_sum = tRate.plain + tRate.water
+  assert(check_sum ~= 0, "Pattern is empty!")
+end
 function main.new(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
@@ -174,10 +188,10 @@ function main.new(w,h)
   end
   -- uGrid = {}
 end
-function main.newRandom(w,h, ...)
+function main.newRandom(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
-  local pool = initPool(w*h, {...})
+  local pool = initPool(w*h)
   cGrid = {}
   for gy = 1, h do
     cGrid[gy] = {}
