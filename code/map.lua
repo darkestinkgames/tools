@@ -105,7 +105,8 @@ local function getRadius(k)
   return val, val * 4
 end
 local function getCell(gx,gy)
-  return cGrid[toKey(gx,gy)]
+  if not cGrid[gy] then return nil end
+  return cGrid[gy][gx]
 end
 local function getCost(cell) ---@param cell map.cell
   assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
@@ -120,20 +121,31 @@ local function getPt(ppGrid,cell) ---@param cell map.cell
 end
 
 local function initPathGrid(pp,mov)end
+local function initPool(...)
+  local list, pool = {...}, {}
+  for i = 1, #list, 2 do
+    local tile, count = list[i], list[i+1]
+    assert( type(tile) == "string",  ("The `tile` (%s) is wrong pattern! Should be: initPool(tile, count, ...)"):format(tile)   )
+    assert( type(count) == "string", ("The `count` (%s) is wrong pattern! Should be: initPool(tile, count, ...)"):format(count) )
+    for f = 1, count
+    do pool[#pool+1] = tile end
+  end
+  return pool
+end
 
 local function drawTile(cell) ---@param cell map.cell
-  assert( cell,   ("Wrong argument `cell` (%s)!"):format(cell)     )
+  assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
   setColor(cell.tile)
   love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
 end
 local function drawHover()
   local cell = getCell(toGrid(love.mouse.getPosition()))
   if cell then
-    love.graphics.setColor(1,1,1, .5)
+    love.graphics.setColor(1,1,1, .25)
     love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
   end
 end
-local function drawUnit()end
+local function drawUnit(x,y)end
 local function drawPathGrid(unit)end
 local function drawPathLine(pp)end
 local function drawPathQueue(unit)end
@@ -145,18 +157,30 @@ local function addQueue(unit,tile)end
 
 local main = {}
 
-function main.new(w,h)
+function main.new(w,h, ...)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
+  local pattern = {...}
   cGrid = {}
-  for gy = 1, h do for gx = 1, w do
-    local cell = newCell(gx,gy)
-    cGrid[cell.key] = cell
-  end end
+  for gy = 1, h do
+    cGrid[gy] = {}
+    for gx = 1, w
+    do cGrid[gy][gx] = newCell(gx,gy) end
+  end
   -- uGrid = {}
 end
 function main.addUnit(team, mov, x,y)end
-function main.draw()end
+function main.draw()
+  -- грядка
+  for gy, list in ipairs(cGrid) do for gx, cell in ipairs(cGrid[gy]) do
+    drawTile(cell)
+  end end
+  -- шляхогрядка юніта
+  -- шлях від юніта до клітинки
+  -- юніт
+  -- підсвітка
+  drawHover()
+end
 function main.update(dt)end
 function main.select()end
 function main.deselect()end
