@@ -145,6 +145,15 @@ local function initPoolTiles(max)
   end
   return pool
 end
+local function initNearest()
+  for y = 1, height do for x = 1, width do
+    local cell = cGrid[y][x]
+    cell.nlist[#cell.nlist+1] = getCell(x, y-1)
+    cell.nlist[#cell.nlist+1] = getCell(x-1, y)
+    cell.nlist[#cell.nlist+1] = getCell(x+1, y)
+    cell.nlist[#cell.nlist+1] = getCell(x, y+1)
+  end end
+end
 
 local function drawTile(cell) ---@param cell map.cell
   assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
@@ -235,7 +244,7 @@ function main.newGrid(w,h)
     for gx = 1, w
     do cGrid[gy][gx] = newCell(gx,gy) end
   end
-  -- todo >> nearest
+  initNearest()
   uList = {}
 end
 function main.newGridRandom(w,h)
@@ -251,7 +260,7 @@ function main.newGridRandom(w,h)
       cGrid[gy][gx] = newCell(gx,gy, tile)
     end
   end
-  -- todo >> nearest
+  initNearest()
   uList = {}
 end
 function main.addUnit(team, mov, x,y)
