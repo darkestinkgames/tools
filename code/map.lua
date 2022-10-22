@@ -49,6 +49,7 @@ local function newCell(gx,gy, tile)
     key   = key,
     tile  = tile,  ---@type "plain"|"water"
     unit  = nil,   ---@type map.unit
+    nlist = {},    ---@type map.cell[]
   }
   obj.gx, obj.gy = gx, gy
   obj.sx, obj.sy = toScreen(gx, gy)
@@ -173,41 +174,40 @@ local function drawPathQueue(unit)end
 
 --#region » пошук шляху
 
----comment
----@param pp_grid map.pathpoint
----@param cell map.cell
-local function getPathPt(pp_grid, cell)
-  local key = cell.key
-  if not pp_grid[key] then
-    pp_grid[key] = newPathPt(cell)
-  end
-end
 
-local function getPathGrid(unit, cell)
-end
+---грядка значень для пошуку шляху
+---@param unit map.unit   # юніт, з якого береться грядка
+---@param cell map.cell?  # не вказувати, якщо грядка будується з нуля
+local function getUnitPathGrid(unit, cell)
+  assert(unit, ("getUnitPathGrid(unit, cell)"):format(unit, cell))
 
-
-
----comment
----@param unit map.unit
----@param cell map.cell?
-local function initPathGrid(unit, cell)
-  assert(unit, ("initPathGrid(%s, %s)"):format(unit, cell))
-
-  local check_list, pp_grid = {}, {}
-
-  if cell then -- взяти існуюючу
-    check_list[#check_list+1] = cell
-    pp_grid[cell.key] = unit.pp_grid[cell.key]
-  else -- створити нове
+  local pp_from
+  if cell then
+    pp_from = unit.pp_grid[cell.key]
+  else
     cell = unit.cell
-    check_list[#check_list+1] = cell
-    pp_grid[cell.key] = newPathPt(cell, 0)
+    pp_from = newPathPt(cell, 0)
   end
+
+  local check_list  = { cell }                  ---@type map.cell[]
+  local pp_grid     = { [cell.key] = pp_from }  ---@type table<string, map.pathpoint>
+
+  -- todo >>
+  local cell_from
+  local i = 1
+  while check_list[i] do
+    cell_from  = check_list[i]
+    pp_from    = pp_grid[cell_from.key]
+    for index, cell_into in ipairs(cell_from.nlist) do
+      if not pp_grid[cell_into.key]
+      then pp_grid[cell_into.key] = newPathPt(cell_into) end
+      local pp_into = pp_grid[cell_into.key]
+    end
+  end
+  -- todo <<
 
   return pp_grid
 end
-
 
 
 --#endregion
@@ -235,6 +235,7 @@ function main.newGrid(w,h)
     for gx = 1, w
     do cGrid[gy][gx] = newCell(gx,gy) end
   end
+  -- todo >> nearest
   uList = {}
 end
 function main.newGridRandom(w,h)
@@ -250,6 +251,7 @@ function main.newGridRandom(w,h)
       cGrid[gy][gx] = newCell(gx,gy, tile)
     end
   end
+  -- todo >> nearest
   uList = {}
 end
 function main.addUnit(team, mov, x,y)
