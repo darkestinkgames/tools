@@ -17,6 +17,7 @@ local uSelected
 
 local color_name = {
   white  = { 1, 1, 1 },
+  pp_grid  = { 1, 1, 1, .15 },
 
   plain  = { .1, .25, .15 },
   water  = { .1, .15, .25 },
@@ -184,11 +185,11 @@ end
 ---@param unit map.unit
 local function drawPathGrid(unit)
   -- setColor(unit.team)
-  setColor("white")
+  setColor("pp_grid")
   for key, pp in pairs(unit.pp_grid) do if unit.mov >= pp.val then
   -- for key, pp in pairs(unit.pp_grid) do
-    local x,y = pp.cell.hx, pp.cell.hy
-    love.graphics.circle("line", x,y, getRadius(.15))
+    local x,y = pp.cell.sx, pp.cell.sy
+    love.graphics.rectangle("fill", x,y, tWidth, tHeight)
     -- love.graphics.circle(unit.mov >= pp.val and "fill" or "line", x,y, getRadius(.15))
     -- love.graphics.print(tostring(pp.val), x-25,y+10)
   -- end
