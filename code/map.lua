@@ -6,7 +6,7 @@ local tWidth, tHeight = 64, 48
 local width, height
 
 local tRate = { plain = 1, water = 1 }
-local cGrid  ---@type table<string, map.cell[]>
+local cGrid  ---@type table<number, map.cell[]>
 local uList  ---@type table<string, map.unit>
 
 local cSelected
@@ -121,14 +121,8 @@ local function getCost(cell) ---@param cell map.cell
   if cell.tile == "water" then return 2 end
   return 1
 end
-local function getPt(ppGrid,cell) ---@param cell map.cell
-  assert( ppGrid, ("Wrong argument `ppGrid` (%s)!"):format(ppGrid) )
-  assert( cell,   ("Wrong argument `cell` (%s)!"):format(cell)     )
-  return ppGrid[cell.key]
-end
 
-local function initPathGrid(pp,mov)end
-local function initPool(max)
+local function initPoolTiles(max)
   local list = {}
   for key, value in pairs(tRate) do
     list[#list+1] = key
@@ -168,11 +162,57 @@ local function drawUnit(unit) ---@param unit map.unit
   setColor(unit.team)
   love.graphics.circle("fill", x,y, getRadius(.9))
 end
+local function drawUnitSelet(unit) ---@param unit map.unit
+  setColor("white")
+  love.graphics.circle("line", unit.cell.hx,unit.cell.hy, getRadius(.9))
+end
 local function drawPathGrid(unit)end
 local function drawPathLine(pp)end
 local function drawPathQueue(unit)end
 
-local function addQueue(unit,tile)end
+
+--#region » пошук шляху
+
+local function getPt(ppGrid,cell) ---@param cell map.cell
+  assert( ppGrid, ("Wrong argument `ppGrid` (%s)!"):format(ppGrid) )
+  assert( cell,   ("Wrong argument `cell` (%s)!"):format(cell)     )
+  return ppGrid[cell.key]
+end
+
+local function getPathPt(pp_grid, cell) ---@param pp_grid map.pathpoint[]
+  local key = cell.key
+  if not pp_grid[key]
+  then pp_grid[key] = newPathPt(cell) end
+  return pp_grid[key]
+end
+
+---@param unit map.unit
+---@param cell map.cell
+local function initPathGrid(unit, cell, val)
+  assert(unit, ("The `unit` (%s) is missing!"):format(unit))
+  assert(cell, ("The `cell` (%s) is missing!"):format(cell))
+  val = val or 0
+
+  local check_list  = { cell } ---@type map.cell[]
+  local path_grid   = {} ---@type table<string, map.pathpoint>
+  local i = 1
+
+  getPt(path_grid, cell, 0)
+  local pp = getPathPt(path_grid, cell)
+  setPtVal( pp, val )
+  while pp do
+    pp.locked = true
+    pp = pp.from
+  end
+
+  repeat
+    
+  until not check_list[i]
+end
+local function addQueue(unit,cell) ---@param unit map.unit
+end
+
+--#endregion
 
 
 -- -- -- >>> головняк
@@ -203,7 +243,7 @@ function main.newGridRandom(w,h)
   assert( w, ("Wrong argument `w` (%s)!"):format(w) )
   assert( h, ("Wrong argument `h` (%s)!"):format(w) )
   width, height = w, h
-  local pool = initPool(w*h)
+  local pool = initPoolTiles(w*h)
   cGrid = {}
   for gy = 1, h do
     cGrid[gy] = {}
@@ -235,15 +275,28 @@ function main.draw()
   -- шляхогрядка юніта
   -- шлях від юніта до клітинки
   -- юніт
-  for index, unit in ipairs(uList) do
-    drawUnit(unit)
-  end
+  for index, unit in ipairs(uList)
+  do drawUnit(unit) end
+  -- 
+  if uSelected
+  then drawUnitSelet(uSelected) end
   -- підсвітка
   drawHover()
 end
 function main.update(dt)end
-function main.select()end
-function main.deselect()end
+function main.select()
+  local x, y = love.mouse.getPosition()
+  cSelected = getCell(toGrid(x,y))
+
+  if cSelected then if uSelected then
+    addQueue(uSelected, cSelected)
+  else
+    uSelected = cSelected.unit
+  end end
+end
+function main.deselect()
+  uSelected = nil
+end
 
 
 -- -- -- >>>
