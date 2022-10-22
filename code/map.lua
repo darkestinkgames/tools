@@ -92,17 +92,6 @@ local function setColor(name)
   assert( color_name[name], ("Color `%s` is missing!"):format(name) )
   love.graphics.setColor(color_name[name])
 end
-local function setPtVal(pp,val,from) ---@param pp map.pathpoint
-  assert( pp,  ("Wrong argument `pp` (%s)!"):format(pp)   )
-  assert( val, ("Wrong argument `val` (%s)!"):format(val) )
-  if not pp.val then pp.val = val + 1 end
-  if pp.val > val then
-    pp.val = val
-    pp.from = from
-    return pp.cell
-  end
-  return nil
-end
 
 local function getRadius(k)
   assert( k, ("Wrong argument `k` (%s)!"):format(k) )
@@ -115,12 +104,6 @@ local function getCell(gx,gy)
 end
 local function getRandomCell()
   return getCell(math.random(width), math.random(height))
-end
-local function getCost(cell) ---@param cell map.cell
-  assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
-  if cell.unit then return nil end
-  if cell.tile == "water" then return 2 end
-  return 1
 end
 
 local function initPoolTiles(max)
@@ -148,9 +131,9 @@ end
 local function initNearest()
   for y = 1, height do for x = 1, width do
     local cell = cGrid[y][x]
-    cell.nlist[#cell.nlist+1] = getCell(x, y-1)
     cell.nlist[#cell.nlist+1] = getCell(x-1, y)
     cell.nlist[#cell.nlist+1] = getCell(x+1, y)
+    cell.nlist[#cell.nlist+1] = getCell(x, y-1)
     cell.nlist[#cell.nlist+1] = getCell(x, y+1)
   end end
 end
@@ -176,17 +159,81 @@ local function drawUnitSelet(unit) ---@param unit map.unit
   setColor("white")
   love.graphics.circle("line", unit.cell.hx,unit.cell.hy, getRadius(.9))
 end
-local function drawPathGrid(unit)end
-local function drawPathLine(pp)end
-local function drawPathQueue(unit)end
 
 
 --#region » пошук шляху
 
 
+---comment
+---@param unit map.unit
+---@param cell map.cell
+local function drawPathLine(unit, cell)
+  local pp = unit.pp_grid[cell.key]
+  setColor("white")
+  love.graphics.print(tostring(pp.val), cell.hx-28,cell.hy+10)
+  setColor(unit.team)
+  while pp do
+    local x,y = pp.cell.hx, pp.cell.hy
+    love.graphics.circle(unit.mov >= pp.val and "fill" or "line", x,y, getRadius(.25))
+    pp = pp.from
+  end
+end
+
+
+---comment
+---@param unit map.unit
+local function drawPathGrid(unit)
+  -- setColor(unit.team)
+  setColor("white")
+  for key, pp in pairs(unit.pp_grid) do if unit.mov >= pp.val then
+  -- for key, pp in pairs(unit.pp_grid) do
+    local x,y = pp.cell.hx, pp.cell.hy
+    love.graphics.circle("line", x,y, getRadius(.15))
+    -- love.graphics.circle(unit.mov >= pp.val and "fill" or "line", x,y, getRadius(.15))
+    -- love.graphics.print(tostring(pp.val), x-25,y+10)
+  -- end
+  end end
+end
+
+
+---comment
+---@param unit map.unit
+---@param cell map.cell
+local function getCost(unit, cell)
+  assert( unit, ("getCost(unit|%s, cell|%s)"):format(unit, cell) )
+  assert( cell, ("getCost(unit|%s, cell|%s)"):format(unit, cell) )
+  local impass = unit.mov + 1
+  if cell.unit then
+    -- print( unit == cell.unit, cell.key )
+    if cell.unit ~= unit
+    then return impass end
+  end
+  if cell.tile == "water" then return 2 end
+  return 1
+end
+
+
+---comment
+---@param pp map.pathpoint
+---@param val number
+---@param from map.pathpoint
+---@return map.cell|nil
+local function setPtVal(pp, val, from)
+  assert( pp,  ("Wrong argument `pp` (%s)!"):format(pp)   )
+  assert( val, ("Wrong argument `val` (%s)!"):format(val) )
+  if not pp.val then pp.val = val + 1 end
+  if pp.val > val then
+    pp.val = val
+    pp.from = from
+    return pp.cell
+  end
+  return nil
+end
+
+
 ---грядка значень для пошуку шляху
----@param unit map.unit   # юніт, з якого береться грядка
----@param cell map.cell?  # не вказувати, якщо грядка будується з нуля
+---@param unit map.unit   # для кого грядка
+---@param cell map.cell?  # якщо грядка з нуля — пропустити
 local function getUnitPathGrid(unit, cell)
   assert(unit, ("getUnitPathGrid(unit, cell)"):format(unit, cell))
 
@@ -201,7 +248,6 @@ local function getUnitPathGrid(unit, cell)
   local check_list  = { cell }                  ---@type map.cell[]
   local pp_grid     = { [cell.key] = pp_from }  ---@type table<string, map.pathpoint>
 
-  -- todo >>
   local cell_from
   local i = 1
   while check_list[i] do
@@ -211,9 +257,11 @@ local function getUnitPathGrid(unit, cell)
       if not pp_grid[cell_into.key]
       then pp_grid[cell_into.key] = newPathPt(cell_into) end
       local pp_into = pp_grid[cell_into.key]
+      local val_into = pp_from.val + getCost(unit, cell_into)
+      check_list[#check_list+1] = setPtVal(pp_into, val_into, pp_from)
     end
+    i = i + 1
   end
-  -- todo <<
 
   return pp_grid
 end
@@ -281,14 +329,17 @@ function main.draw()
   for gy, list in ipairs(cGrid) do for gx, cell in ipairs(cGrid[gy]) do
     drawTile(cell)
   end end
-  -- шляхогрядка юніта
-  -- шлях від юніта до клітинки
-  -- юніт
+  -- юніти
   for index, unit in ipairs(uList)
   do drawUnit(unit) end
-  -- 
-  if uSelected
-  then drawUnitSelet(uSelected) end
+  -- шляхогрядка юніта
+  if uSelected then
+    local mouse_cell = getCell(toGrid(love.mouse.getPosition()))
+    if mouse_cell
+    then drawPathLine(uSelected, mouse_cell) end
+    drawPathGrid(uSelected)
+    drawUnitSelet(uSelected)
+  end
   -- підсвітка
   drawHover()
 end
@@ -298,11 +349,11 @@ function main.select()
   cSelected = getCell(toGrid(x,y))
 
   if cSelected then if uSelected then
-    uSelected.pp_grid = initPathGrid(uSelected, cSelected)
+    uSelected.pp_grid = getUnitPathGrid(uSelected, cSelected)
   else
     uSelected = cSelected.unit
     if uSelected
-    then uSelected.pp_grid = initPathGrid(uSelected) end
+    then uSelected.pp_grid = getUnitPathGrid(uSelected) end
   end end
 end
 function main.deselect()
