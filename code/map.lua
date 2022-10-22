@@ -63,11 +63,11 @@ local function newUnit(team, mov, cell)
   assert( not cell.unit, ("The `cell` %s is occupied!"):format(cell.key) )
   ---@class map.unit
   local obj = {
-    team   = team,  ---@type number
-    mov    = mov,   ---@type number
-    cell   = cell,  ---@type map.cell
-    pgrid  = nil,   ---@type table<string, map.pathpoint>
-    plist  = nil,   ---@type map.pathpoint[]
+    team     = team,  ---@type number
+    mov      = mov,   ---@type number
+    cell     = cell,  ---@type map.cell
+    pp_grid  = nil,   ---@type table<string, map.pathpoint>
+    plist    = nil,   ---@type map.pathpoint[]
   }
   return obj
 end
@@ -173,44 +173,42 @@ local function drawPathQueue(unit)end
 
 --#region » пошук шляху
 
-local function getPt(ppGrid,cell) ---@param cell map.cell
-  assert( ppGrid, ("Wrong argument `ppGrid` (%s)!"):format(ppGrid) )
-  assert( cell,   ("Wrong argument `cell` (%s)!"):format(cell)     )
-  return ppGrid[cell.key]
-end
-
-local function getPathPt(pp_grid, cell) ---@param pp_grid map.pathpoint[]
-  local key = cell.key
-  if not pp_grid[key]
-  then pp_grid[key] = newPathPt(cell) end
-  return pp_grid[key]
-end
-
----@param unit map.unit
+---comment
+---@param pp_grid map.pathpoint
 ---@param cell map.cell
-local function initPathGrid(unit, cell, val)
-  assert(unit, ("The `unit` (%s) is missing!"):format(unit))
-  assert(cell, ("The `cell` (%s) is missing!"):format(cell))
-  val = val or 0
+local function getPathPt(pp_grid, cell)
+  local key = cell.key
+  if not pp_grid[key] then
+    pp_grid[key] = newPathPt(cell)
+  end
+end
 
-  local check_list  = { cell } ---@type map.cell[]
-  local path_grid   = {} ---@type table<string, map.pathpoint>
-  local i = 1
+local function getPathGrid(unit, cell)
+end
 
-  getPt(path_grid, cell, 0)
-  local pp = getPathPt(path_grid, cell)
-  setPtVal( pp, val )
-  while pp do
-    pp.locked = true
-    pp = pp.from
+
+
+---comment
+---@param unit map.unit
+---@param cell map.cell?
+local function initPathGrid(unit, cell)
+  assert(unit, ("initPathGrid(%s, %s)"):format(unit, cell))
+
+  local check_list, pp_grid = {}, {}
+
+  if cell then -- взяти існуюючу
+    check_list[#check_list+1] = cell
+    pp_grid[cell.key] = unit.pp_grid[cell.key]
+  else -- створити нове
+    cell = unit.cell
+    check_list[#check_list+1] = cell
+    pp_grid[cell.key] = newPathPt(cell, 0)
   end
 
-  repeat
-    
-  until not check_list[i]
+  return pp_grid
 end
-local function addQueue(unit,cell) ---@param unit map.unit
-end
+
+
 
 --#endregion
 
@@ -289,9 +287,11 @@ function main.select()
   cSelected = getCell(toGrid(x,y))
 
   if cSelected then if uSelected then
-    addQueue(uSelected, cSelected)
+    uSelected.pp_grid = initPathGrid(uSelected, cSelected)
   else
     uSelected = cSelected.unit
+    if uSelected
+    then uSelected.pp_grid = initPathGrid(uSelected) end
   end end
 end
 function main.deselect()
