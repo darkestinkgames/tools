@@ -13,5 +13,5 @@
 **ps:** <br />
 цього разу прогрес буду завантажувати по сесіях, а не по днях
 
-» [список тут](https://github.com/darkestinkgames/side1/commits/main)
+» [список тут](https://github.com/darkestinkgames/side1/commits/main) «
 

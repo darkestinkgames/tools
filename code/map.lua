@@ -248,6 +248,10 @@ local function getUnitPathGrid(unit, cell)
 
   return pp_grid
 end
+local function initPathGrid()
+  for i, u in ipairs(uList)
+  do u.pp_grid = getUnitPathGrid(u) end
+end
 
 
 -- >>
@@ -319,8 +323,7 @@ function main.addUnit(team, mov, x,y)
   local unit = newUnit(team, mov, cell)
   cell.unit, unit.cell = unit, cell
   uList[#uList+1] = unit
-  for i, u in ipairs(uList)
-  do u.pp_grid = getUnitPathGrid(u) end
+  initPathGrid()
 end
 function main.draw()
   -- грядка
@@ -355,7 +358,10 @@ function main.select()
   end end
 end
 function main.deselect()
-  uSelected = nil
+  if uSelected then
+    uSelected.pp_grid = getUnitPathGrid(uSelected)
+    uSelected = nil
+  end
 end
 
 
