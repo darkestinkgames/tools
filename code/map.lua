@@ -1,5 +1,8 @@
 math.randomseed(os.time())
 
+local latest_grid ---@type map.cell[]
+local shown_val = 0
+
 -- -- -- >>> ядро
 
 local tWidth, tHeight = 64, 48
@@ -47,7 +50,6 @@ end
 
 local function newCell(gx,gy, tile)
   local key = toKey(gx, gy)
-  -- print(key)
   ---@class map.cell
   local obj = {
     key   = key,
@@ -259,6 +261,7 @@ local function getUnitPathGrid(unit, cell)
     i = i + 1
   end
 
+  latest_grid = check_list
   return pp_grid, cell
 end
 ---оновлення шляху для усіх юнітів
@@ -294,6 +297,17 @@ local function drawHover()
   end
   if unit and not uSelected then
     drawPathGrid(unit)
+  end
+end
+
+
+-- >> тест
+
+local function drawLatest()
+  setColor("pp_grid_hower")
+  for i = 1, shown_val do
+    local c = latest_grid[i]
+    love.graphics.circle("fill", c.hx,c.hy, getRadius(.95))
   end
 end
 
@@ -371,6 +385,8 @@ function main.draw()
   end
   -- підсвітка
   drawHover()
+  -- 
+  drawLatest()
 end
 function main.update(dt)end
 function main.select()
@@ -384,6 +400,7 @@ function main.select()
     if uSelected
     then uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected) end
   end end
+  shown_val = 0
 end
 function main.deselect()
   if uSelected then
@@ -447,6 +464,11 @@ function main.update(dt)
     print(k, val)
     tdt = math.min(tdt + dt, tx)
   end
+  -- >> тест
+  if latest_grid then if #latest_grid > shown_val then
+    shown_val = shown_val + dt * 2
+  end end
+  -- <<
 end
 
 
