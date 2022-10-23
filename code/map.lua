@@ -9,8 +9,10 @@ local tRate = { plain = 1, water = 1 }
 local cGrid  ---@type table<number, map.cell[]>
 local uList  ---@type table<string, map.unit>
 
-local cSelected
-local uSelected
+local cSelected  ---@type map.cell?
+local uSelected  ---@type map.unit?
+
+local updatables = {}
 
 
 -- -- -- >>> енумерашки
@@ -28,7 +30,7 @@ local color_name = {
 }
 
 
--- -- -- >>> функціонал
+-- -- -- >>> конвертація
 
 local function toKey(x,y)
   return ("x%sy%s"):format(x,y)
@@ -66,11 +68,12 @@ local function newUnit(team, mov, cell)
   assert( not cell.unit, ("The `cell` %s is occupied!"):format(cell.key) )
   ---@class map.unit
   local obj = {
-    team     = team,  ---@type number
-    mov      = mov,   ---@type number
-    cell     = cell,  ---@type map.cell
-    pp_grid  = nil,   ---@type table<string, map.pathpoint>
-    plist    = nil,   ---@type map.pathpoint[]
+    team       = team,  ---@type number
+    mov        = mov,   ---@type number
+    cell_pos   = cell,  ---@type map.cell
+    cell_into  = nil,   ---@type map.cell?
+    pp_grid    = nil,   ---@type table<string, map.pathpoint>
+    plist      = nil,   ---@type map.pathpoint[]
   }
   return obj
 end
@@ -146,19 +149,19 @@ local function drawTile(cell) ---@param cell map.cell
   love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
 end
 local function drawUnit(unit) ---@param unit map.unit
-  local x,y = unit.cell.hx, unit.cell.hy
+  local x,y = unit.cell_pos.hx, unit.cell_pos.hy
   setColor(unit.team)
   love.graphics.circle("fill", x,y, getRadius(.9))
 end
 local function drawUnitSelet(unit) ---@param unit map.unit
   setColor("white")
-  love.graphics.circle("line", unit.cell.hx,unit.cell.hy, getRadius(.9))
+  love.graphics.circle("line", unit.cell_pos.hx,unit.cell_pos.hy, getRadius(.9))
 end
 
 
 -- >> пошук шляху
 
----comment
+---unit > pathpoint
 ---@param unit map.unit
 ---@param cell map.cell
 local function drawPathLine(unit, cell)
@@ -174,7 +177,7 @@ local function drawPathLine(unit, cell)
     pp = pp.from
   end
 end
----comment
+---unit > pathpoint
 ---@param unit map.unit
 local function drawPathGrid(unit)
   setColor("pp_grid")
@@ -183,7 +186,7 @@ local function drawPathGrid(unit)
     love.graphics.rectangle("fill", x,y, tWidth, tHeight)
   end end
 end
----comment
+---unit > pathpoint
 ---@param unit map.unit
 ---@param cell map.cell
 local function getCost(unit, cell)
@@ -198,7 +201,16 @@ local function getCost(unit, cell)
   if cell.tile == "water" then return 2 end
   return 1
 end
----comment
+---unit > pathpoint
+---@param unit map.unit
+---@param cell map.cell
+---@return map.pathpoint
+local function getUnitPathPt(unit, cell)
+  assert(unit, ("getUnitPathPt(%s, %s)"):format(unit, cell))
+  assert(cell, ("getUnitPathPt(%s, %s)"):format(unit, cell))
+  return unit.pp_grid[cell.key]
+end
+---unit > pathpoint
 ---@param pp map.pathpoint
 ---@param val number
 ---@param from map.pathpoint
@@ -216,22 +228,23 @@ local function setPtVal(pp, val, from)
 end
 ---грядка значень для пошуку шляху
 ---@param unit map.unit   # для кого грядка
----@param cell map.cell?  # якщо грядка з нуля — пропустити
+---@param cell map.cell?  # не вказувати, якщо грядка з нуля
 local function getUnitPathGrid(unit, cell)
   assert(unit, ("getUnitPathGrid(unit, cell)"):format(unit, cell))
 
+  local cell_from = cell
   local pp_from
   if cell then
     pp_from = unit.pp_grid[cell.key]
   else
-    cell = unit.cell
-    pp_from = newPathPt(cell, 0)
+    cell_from = unit.cell_pos
+    pp_from = newPathPt(cell_from, 0)
   end
 
-  local check_list  = { cell }                  ---@type map.cell[]
-  local pp_grid     = { [cell.key] = pp_from }  ---@type table<string, map.pathpoint>
+  local check_list  = { cell_from }                  ---@type map.cell[]
+  local pp_grid     = { [cell_from.key] = pp_from }  ---@type table<string, map.pathpoint>
 
-  local cell_from
+  -- local cell_from
   local i = 1
   while check_list[i] do
     cell_from  = check_list[i]
@@ -246,11 +259,26 @@ local function getUnitPathGrid(unit, cell)
     i = i + 1
   end
 
-  return pp_grid
+  return pp_grid, cell
 end
-local function initPathGrid()
+---оновлення шляху для усіх юнітів
+local function initPathGridAll()
   for i, u in ipairs(uList)
   do u.pp_grid = getUnitPathGrid(u) end
+end
+
+
+-- >> переміщення
+
+local function newUpdMove(unit, timer)
+  local item = {
+    unit   = unit,
+    dt     = 0,
+    timer  = timer,
+  }
+end
+local function updMove(item, dt)
+  
 end
 
 
@@ -321,9 +349,9 @@ function main.addUnit(team, mov, x,y)
   end
   assert(cell, "The `cell` is missing!")
   local unit = newUnit(team, mov, cell)
-  cell.unit, unit.cell = unit, cell
+  cell.unit, unit.cell_pos = unit, cell
   uList[#uList+1] = unit
-  initPathGrid()
+  initPathGridAll()
 end
 function main.draw()
   -- грядка
@@ -350,17 +378,74 @@ function main.select()
   cSelected = getCell(toGrid(x,y))
 
   if cSelected then if uSelected then
-    uSelected.pp_grid = getUnitPathGrid(uSelected, cSelected)
+    uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected, cSelected)
   else
     uSelected = cSelected.unit
     if uSelected
-    then uSelected.pp_grid = getUnitPathGrid(uSelected) end
+    then uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected) end
   end end
 end
 function main.deselect()
   if uSelected then
-    uSelected.pp_grid = getUnitPathGrid(uSelected)
+    uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected)
     uSelected = nil
+  end
+end
+
+
+-- >>
+
+---comment
+---@param unit map.unit
+---@param dt_val number
+---@return map.upd.mov
+local function newUpdItemMove(unit, dt_val)
+  if not unit.cell_into
+  then return nil end
+
+  dt_val = dt_val or .2
+
+  local pp_list  = {}  ---@type map.pathpoint[]
+  local dt_list  = {}  ---@type number[]
+
+  local pp_into = getUnitPathPt(unit, unit.cell_into)
+  while pp_into do
+    pp_list[#pp_list+1] = pp_into
+    pp_into = pp_into.from
+  end
+
+  dt_list[#pp_list] = 0
+  for i = #pp_list-1, 1, -1 do
+    dt_list[i] = (pp_list[i].val - pp_list[i+1].val) * dt_val
+  end
+
+  ---@class map.upd.mov
+  local item = {
+    unit     = unit,
+    pp_list  = pp_list,
+    dt_list  = dt_list,
+    dt       = 0,
+  }
+
+  return item
+end
+---comment
+---@param item map.upd.mov
+---@param dt number
+local function updItemMove(item, dt)
+  item.dt = item.dt + dt
+end
+
+local tx    = 1
+local tdt   = 0
+local path  = { 1, 1, 1, 1 }
+
+function main.update(dt)
+  if tx > tdt then
+    local k = tdt / tx
+    local val = (#path - 1) * k
+    print(k, val)
+    tdt = math.min(tdt + dt, tx)
   end
 end
 
