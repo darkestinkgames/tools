@@ -18,6 +18,7 @@ local uSelected
 local color_name = {
   white  = { 1, 1, 1 },
   pp_grid  = { 1, 1, 1, .15 },
+  pp_grid_hower  = { 1, 1, 0, .1 },
 
   plain  = { .1, .25, .15 },
   water  = { .1, .15, .25 },
@@ -104,7 +105,7 @@ local function getCell(gx,gy)
   return cGrid[gy][gx]
 end
 local function getRandomCell()
-  return getCell(math.random(width), math.random(height))
+  return cGrid[math.random(height)][math.random(width)]
 end
 
 local function initPoolTiles(max)
@@ -144,13 +145,6 @@ local function drawTile(cell) ---@param cell map.cell
   setColor(cell.tile)
   love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
 end
-local function drawHover()
-  local cell = getCell(toGrid(love.mouse.getPosition()))
-  if cell then
-    love.graphics.setColor(1,1,1, .25)
-    love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
-  end
-end
 local function drawUnit(unit) ---@param unit map.unit
   local x,y = unit.cell.hx, unit.cell.hy
   setColor(unit.team)
@@ -162,16 +156,17 @@ local function drawUnitSelet(unit) ---@param unit map.unit
 end
 
 
---#region » пошук шляху
-
+-- >> пошук шляху
 
 ---comment
 ---@param unit map.unit
 ---@param cell map.cell
 local function drawPathLine(unit, cell)
   local pp = unit.pp_grid[cell.key]
-  setColor("white")
-  love.graphics.print(tostring(pp.val), cell.hx-28,cell.hy+10)
+  if not cell.unit then
+    setColor("white")
+    love.graphics.print(tostring(pp.val), cell.hx-28,cell.hy+10)
+  end
   setColor(unit.team)
   while pp do
     local x,y = pp.cell.hx, pp.cell.hy
@@ -179,24 +174,15 @@ local function drawPathLine(unit, cell)
     pp = pp.from
   end
 end
-
-
 ---comment
 ---@param unit map.unit
 local function drawPathGrid(unit)
-  -- setColor(unit.team)
   setColor("pp_grid")
   for key, pp in pairs(unit.pp_grid) do if unit.mov >= pp.val then
-  -- for key, pp in pairs(unit.pp_grid) do
     local x,y = pp.cell.sx, pp.cell.sy
     love.graphics.rectangle("fill", x,y, tWidth, tHeight)
-    -- love.graphics.circle(unit.mov >= pp.val and "fill" or "line", x,y, getRadius(.15))
-    -- love.graphics.print(tostring(pp.val), x-25,y+10)
-  -- end
   end end
 end
-
-
 ---comment
 ---@param unit map.unit
 ---@param cell map.cell
@@ -212,8 +198,6 @@ local function getCost(unit, cell)
   if cell.tile == "water" then return 2 end
   return 1
 end
-
-
 ---comment
 ---@param pp map.pathpoint
 ---@param val number
@@ -230,8 +214,6 @@ local function setPtVal(pp, val, from)
   end
   return nil
 end
-
-
 ---грядка значень для пошуку шляху
 ---@param unit map.unit   # для кого грядка
 ---@param cell map.cell?  # якщо грядка з нуля — пропустити
@@ -268,7 +250,20 @@ local function getUnitPathGrid(unit, cell)
 end
 
 
---#endregion
+-- >>
+
+local function drawHover()
+  local cell = getCell(toGrid(love.mouse.getPosition()))
+  local unit
+  if cell then
+    unit = cell.unit
+    love.graphics.setColor(1,1,1, .25)
+    love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
+  end
+  if unit and not uSelected then
+    drawPathGrid(unit)
+  end
+end
 
 
 -- -- -- >>> головняк
@@ -324,6 +319,8 @@ function main.addUnit(team, mov, x,y)
   local unit = newUnit(team, mov, cell)
   cell.unit, unit.cell = unit, cell
   uList[#uList+1] = unit
+  for i, u in ipairs(uList)
+  do u.pp_grid = getUnitPathGrid(u) end
 end
 function main.draw()
   -- грядка
