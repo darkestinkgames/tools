@@ -100,26 +100,40 @@ local function newUnit(team, mov, cell)
 end
 ---comment
 ---@param cell map.cell
----@param val number
+---@param val number?
 ---@return map.pathpoint
 local function newPathPt(cell, val)
   assert( cell, ("newPathPt(%s, %s)"):format(cell, val) )
   local key = cell.key
   ---@class map.pathpoint
   local obj = {
-    key     = key,      ---@type string
-    cell    = cell,
-    val     = val,
-    from    = nil,      ---@type map.pathpoint
-    x       = cell.hx,
-    y       = cell.hy,
+    key   = key,      ---@type string
+    cell  = cell,
+    val   = val,
+    from  = nil,      ---@type map.pathpoint
+    x     = cell.hx,
+    y     = cell.hy,
+    getPos  = getPos,
+  }
+  return obj
+end
+---comment
+---@param x number
+---@param y number
+---@return map.movepoint
+local function newMovePt(x,y)
+  ---@class map.movepoint
+  local obj = {
+    x   = x,
+    y   = y,
+    dt  = .2,
     getPos  = getPos,
   }
   return obj
 end
 
 
--- -- -- >>> функціонал
+-- -- -- >>>
 
 local function setColor(name)
   assert( color_name[name], ("Color `%s` is missing!"):format(name) )
