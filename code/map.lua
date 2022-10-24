@@ -1,8 +1,5 @@
 math.randomseed(os.time())
 
-local latest_grid ---@type map.cell[]
-local shown_val = 0
-
 -- -- -- >>> ядро
 
 local tWidth, tHeight = 64, 48
@@ -15,7 +12,7 @@ local uList  ---@type table<string, map.unit>
 local cSelected  ---@type map.cell?
 local uSelected  ---@type map.unit?
 
-local updatables = {}
+local updatables = {}  ---@type map.upd.mov[]
 
 
 -- -- -- >>> енумерашки
@@ -273,16 +270,64 @@ end
 
 -- >> переміщення
 
-local function newUpdMove(unit, timer)
+-- todo >>
+
+---comment
+---@param unit map.unit
+---@param dt_val number
+---@return map.upd.mov?
+local function newUpdItemMove(unit, dt_val)
+  if not unit.cell_into
+  then return nil end
+
+  dt_val = dt_val or .2
+
+  local pp_list  = {}  ---@type map.pathpoint[]
+  local dt_list  = {}  ---@type number[]
+
+  local pp_into = getUnitPathPt(unit, unit.cell_into)
+  while pp_into do
+    pp_list[#pp_list+1] = pp_into
+    pp_into = pp_into.from
+  end
+
+  dt_list[#pp_list] = 0
+  for i = #pp_list-1, 1, -1 do
+    dt_list[i] = (pp_list[i].val - pp_list[i+1].val) * dt_val
+  end
+
+  ---@class map.upd.mov
   local item = {
-    unit   = unit,
-    dt     = 0,
-    timer  = timer,
+    unit     = unit,
+    pp_list  = pp_list,
+    dt_list  = dt_list,
+    dt       = 0,
   }
+
+  return item
 end
-local function updMove(item, dt)
-  
+
+---comment
+---@param item map.upd.mov
+---@param dt number
+local function updItemMove(item, dt)
+  local dt_val, dt_max = item.dt + dt, item.dt_list[#item.dt_list]
+  local k = dt_val / dt_max
+  local pp_from, pp_into = item.pp_list[#item.pp_list], item.pp_list[#item.pp_list-1]
+  local dx, dy = pp_into.cell.hx - pp_from.cell.hx, pp_into.cell.hy - pp_from.cell.hy
+  item.unit.x = item.unit.x + dx * k
+  item.unit.y = item.unit.y + dy * k
 end
+
+local function updItems(dt)
+  for index, item in ipairs(updatables) do
+    if 2 > #item.pp_list
+    then table.remove(updatables, index)
+    else updItemMove(item, dt) end
+  end
+end
+
+-- todo <<
 
 
 -- >>
@@ -303,13 +348,6 @@ end
 
 -- >> тест
 
-local function drawLatest()
-  setColor("pp_grid_hower")
-  for i = 1, shown_val do
-    local c = latest_grid[i]
-    love.graphics.circle("fill", c.hx,c.hy, getRadius(.95))
-  end
-end
 
 
 -- -- -- >>> головняк
@@ -386,7 +424,6 @@ function main.draw()
   -- підсвітка
   drawHover()
   -- 
-  drawLatest()
 end
 function main.update(dt)end
 function main.select()
@@ -400,75 +437,12 @@ function main.select()
     if uSelected
     then uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected) end
   end end
-  shown_val = 0
 end
 function main.deselect()
   if uSelected then
     uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected)
     uSelected = nil
   end
-end
-
-
--- >>
-
----comment
----@param unit map.unit
----@param dt_val number
----@return map.upd.mov
-local function newUpdItemMove(unit, dt_val)
-  if not unit.cell_into
-  then return nil end
-
-  dt_val = dt_val or .2
-
-  local pp_list  = {}  ---@type map.pathpoint[]
-  local dt_list  = {}  ---@type number[]
-
-  local pp_into = getUnitPathPt(unit, unit.cell_into)
-  while pp_into do
-    pp_list[#pp_list+1] = pp_into
-    pp_into = pp_into.from
-  end
-
-  dt_list[#pp_list] = 0
-  for i = #pp_list-1, 1, -1 do
-    dt_list[i] = (pp_list[i].val - pp_list[i+1].val) * dt_val
-  end
-
-  ---@class map.upd.mov
-  local item = {
-    unit     = unit,
-    pp_list  = pp_list,
-    dt_list  = dt_list,
-    dt       = 0,
-  }
-
-  return item
-end
----comment
----@param item map.upd.mov
----@param dt number
-local function updItemMove(item, dt)
-  item.dt = item.dt + dt
-end
-
-local tx    = 1
-local tdt   = 0
-local path  = { 1, 1, 1, 1 }
-
-function main.update(dt)
-  if tx > tdt then
-    local k = tdt / tx
-    local val = (#path - 1) * k
-    print(k, val)
-    tdt = math.min(tdt + dt, tx)
-  end
-  -- >> тест
-  if latest_grid then if #latest_grid > shown_val then
-    shown_val = shown_val + dt * 2
-  end end
-  -- <<
 end
 
 
