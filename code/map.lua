@@ -31,6 +31,22 @@ local color_name = {
 }
 
 
+-- -- -- >>> спільне
+
+local function addPosition(obj, x,y)
+  obj.x, obj.y = obj.x + x, obj.y + y
+end
+local function getPos(obj)
+  return obj.x, obj.y
+end
+local function getPosition(obj, x,y)
+  return obj.x - (x or 0), obj.y - (y or 0)
+end
+local function getPosOff(obj, x,y)
+  return obj.x - x, obj.y - y
+end
+
+
 -- -- -- >>> конвертація
 
 local function toKey(x,y)
