@@ -12,8 +12,8 @@ local uList  ---@type table<string, map.unit>
 local cSelected  ---@type map.cell?
 local uSelected  ---@type map.unit?
 
-local updmov_list = {}  ---@type map.upd.mov[]
-local dt_val = .2
+local upmov_list = {}  ---@type map.movpoint[]
+local dt_val = .07
 
 
 -- -- -- >>> енумерашки
@@ -94,6 +94,7 @@ local function newUnit(team, mov, cell)
     cell_pos   = cell,  ---@type map.cell
     pp_grid    = nil,   ---@type table<string, map.pathpoint>
     plist      = nil,   ---@type map.pathpoint[]
+    addPosition  = addPosition,
   }
   obj.x, obj.y = cell.hx, cell.hy
   return obj
@@ -138,6 +139,15 @@ end
 local function setColor(name)
   assert( color_name[name], ("Color `%s` is missing!"):format(name) )
   love.graphics.setColor(color_name[name])
+end
+---comment
+---@param unit map.unit
+---@param cell map.cell
+local function setUnitPos(unit, cell)
+  assert(unit, ("setUnitPos(%s, %s)"):format(unit, cell))
+  assert(cell, ("setUnitPos(%s, %s)"):format(unit, cell))
+  unit.cell_pos.unit = nil
+  unit.cell_pos, cell.unit = cell, unit
 end
 
 local function getRadius(k)
@@ -314,38 +324,68 @@ end
 
 -- todo >>
 
+---comment
+---@param unit map.unit
+---@param cell map.cell
+---@return map.movpoint[]
 local function newUnitUpdMov(unit, cell)
   assert(unit, ("newUpdMov(%s, %s)"):format(unit, cell))
   assert(cell, ("newUpdMov(%s, %s)"):format(unit, cell))
 
-  ---@class map.upd.mov
-  local obj = {
-    unit = unit,   ---@type map.unit
-    pp_list = {},  ---@type map.pathpoint[]
-    dt_list = {},  ---@type number[]
-    dt      = 0,
-  }
-
   local pp_into = getUnitPathPt(unit, cell)
+
+  local list = {}
   while pp_into.from do
-    obj.pp_list[#obj.pp_list+1] = pp_into
+    ---@class map.movpoint
+    local movpoint = {
+      unit  = unit,
+      dt    = (pp_into.val - pp_into.from.val) * dt_val,
+      getPosition  = getPosition,
+    }
+    movpoint.x, movpoint.y = pp_into:getPos()
+    list[#list+1] = movpoint
+
     pp_into = pp_into.from
   end
 
-  for i, pp in ipairs(obj.pp_list)
-  do obj.dt_list[i] = pp.val * dt_val end
-
-  return obj
+  return list
 end
-local function setUnitMovement(unit, cell) ---@param unit map.unit
-  updmov_list[#updmov_list+1] = newUnitUpdMov(unit, cell)
-  unit.cell_pos = cell
+---comment
+---@param unit map.unit
+---@param cell map.cell
+local function setUnitMovement(unit, cell)
+  assert( unit,           ("setUnitMovement(`unit`, cell)"):format(unit, cell) )
+  assert( cell,           ("setUnitMovement(unit, `cell`)"):format(unit, cell) )
+  assert( not cell.unit,  ("setUnitMovement(unit, `cell.unit`)"):format(unit, cell) )
+  upmov_list[#upmov_list+1] = newUnitUpdMov(unit, cell)
+  setUnitPos(unit, cell)
+  unit.pp_grid = getUnitPathGrid(unit)
 end
-local function updMov(item, dt) ---@param item map.upd.mov
-  item.dt = item.dt + dt
-  -- todo
+---comment
+---@param list map.movpoint[]
+---@param dt number
+local function updMovItem(list, dt)
+  local movpoint = list[#list]
+  if dt >= movpoint.dt then
+    movpoint.unit.x, movpoint.unit.y = movpoint:getPosition()
+    table.remove(list)
+  else
+    local k = dt / movpoint.dt
+    local dx, dy = movpoint.x - movpoint.unit.x, movpoint.y - movpoint.unit.y
+    movpoint.unit:addPosition(dx * k, dy * k)
+    movpoint.dt = movpoint.dt - dt
+  end
 end
-local function updItemsAll(dt) end
+local function updMovAll(dt)
+  for i, list in ipairs(upmov_list) do
+    updMovItem(list, dt)
+    if #list == 0
+    then
+      --! відстежити прольоти
+      table.remove(upmov_list, i)
+    end
+  end
+end
 
 -- todo <<
 
@@ -421,7 +461,7 @@ function main.addUnit(team, mov, x,y)
   end
   assert(cell, "The `cell` is missing!")
   local unit = newUnit(team, mov, cell)
-  cell.unit, unit.cell_pos = unit, cell
+  setUnitPos(unit, cell)
   uList[#uList+1] = unit
   initPathGridAll()
 end
@@ -446,7 +486,7 @@ function main.draw()
   -- 
 end
 function main.update(dt)
-  updItemsAll(dt)
+  updMovAll(dt)
 end
 function main.select()
   local x, y = love.mouse.getPosition()
@@ -455,6 +495,7 @@ function main.select()
   if cSelected then if uSelected then
     -- uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected, cSelected)
     setUnitMovement(uSelected, cSelected)
+    -- main.deselect()
   else
     uSelected = cSelected.unit
     if uSelected
