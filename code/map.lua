@@ -12,7 +12,8 @@ local uList  ---@type table<string, map.unit>
 local cSelected  ---@type map.cell?
 local uSelected  ---@type map.unit?
 
-local updatables = {}  ---@type map.upd.mov[]
+local updmov_list = {}  ---@type map.upd.mov[]
+local dt_val = .2
 
 
 -- -- -- >>> енумерашки
@@ -60,6 +61,11 @@ local function newCell(gx,gy, tile)
   obj.tile = obj.tile or "plain"
   return obj
 end
+---comment
+---@param team number
+---@param mov number
+---@param cell map.cell
+---@return map.unit
 local function newUnit(team, mov, cell)
   assert( team,          ("Wrong argument `team` (%s)!"):format(team)    )
   assert( mov,           ("Wrong argument `mov` (%s)!"):format(mov)      )
@@ -70,10 +76,10 @@ local function newUnit(team, mov, cell)
     team       = team,  ---@type number
     mov        = mov,   ---@type number
     cell_pos   = cell,  ---@type map.cell
-    cell_into  = nil,   ---@type map.cell?
     pp_grid    = nil,   ---@type table<string, map.pathpoint>
     plist      = nil,   ---@type map.pathpoint[]
   }
+  obj.x, obj.y = cell.hx, cell.hy
   return obj
 end
 local function newPathPt(cell, val)
@@ -148,9 +154,8 @@ local function drawTile(cell) ---@param cell map.cell
   love.graphics.rectangle("fill", cell.sx,cell.sy, tWidth-1, tHeight-1)
 end
 local function drawUnit(unit) ---@param unit map.unit
-  local x,y = unit.cell_pos.hx, unit.cell_pos.hy
   setColor(unit.team)
-  love.graphics.circle("fill", x,y, getRadius(.9))
+  love.graphics.circle("fill", unit.x,unit.y, getRadius(.9))
 end
 local function drawUnitSelet(unit) ---@param unit map.unit
   setColor("white")
@@ -272,60 +277,38 @@ end
 
 -- todo >>
 
----comment
----@param unit map.unit
----@param dt_val number
----@return map.upd.mov?
-local function newUpdItemMove(unit, dt_val)
-  if not unit.cell_into
-  then return nil end
+local function newUnitUpdMov(unit, cell)
+  assert(unit, ("newUpdMov(%s, %s)"):format(unit, cell))
+  assert(cell, ("newUpdMov(%s, %s)"):format(unit, cell))
 
-  dt_val = dt_val or .2
+  ---@class map.upd.mov
+  local obj = {
+    unit = unit,   ---@type map.unit
+    pp_list = {},  ---@type map.pathpoint[]
+    dt_list = {},  ---@type number[]
+    dt      = 0,
+  }
 
-  local pp_list  = {}  ---@type map.pathpoint[]
-  local dt_list  = {}  ---@type number[]
-
-  local pp_into = getUnitPathPt(unit, unit.cell_into)
-  while pp_into do
-    pp_list[#pp_list+1] = pp_into
+  local pp_into = getUnitPathPt(unit, cell)
+  while pp_into.from do
+    obj.pp_list[#obj.pp_list+1] = pp_into
     pp_into = pp_into.from
   end
 
-  dt_list[#pp_list] = 0
-  for i = #pp_list-1, 1, -1 do
-    dt_list[i] = (pp_list[i].val - pp_list[i+1].val) * dt_val
-  end
+  for i, pp in ipairs(obj.pp_list)
+  do obj.dt_list[i] = pp.val * dt_val end
 
-  ---@class map.upd.mov
-  local item = {
-    unit     = unit,
-    pp_list  = pp_list,
-    dt_list  = dt_list,
-    dt       = 0,
-  }
-
-  return item
+  return obj
 end
-
----comment
----@param item map.upd.mov
----@param dt number
-local function updItemMove(item, dt)
-  local dt_val, dt_max = item.dt + dt, item.dt_list[#item.dt_list]
-  local k = dt_val / dt_max
-  local pp_from, pp_into = item.pp_list[#item.pp_list], item.pp_list[#item.pp_list-1]
-  local dx, dy = pp_into.cell.hx - pp_from.cell.hx, pp_into.cell.hy - pp_from.cell.hy
-  item.unit.x = item.unit.x + dx * k
-  item.unit.y = item.unit.y + dy * k
+local function setUnitMovement(unit, cell) ---@param unit map.unit
+  updmov_list[#updmov_list+1] = newUnitUpdMov(unit, cell)
+  unit.cell_pos = cell
 end
-
-local function updItems(dt)
-  for index, item in ipairs(updatables) do
-    if 2 > #item.pp_list
-    then table.remove(updatables, index)
-    else updItemMove(item, dt) end
-  end
+local function updMov(item, dt) ---@param item map.upd.mov
+  item.dt = item.dt + dt
+  -- todo
 end
+local function updItemsAll(dt) end
 
 -- todo <<
 
@@ -425,13 +408,16 @@ function main.draw()
   drawHover()
   -- 
 end
-function main.update(dt)end
+function main.update(dt)
+  updItemsAll(dt)
+end
 function main.select()
   local x, y = love.mouse.getPosition()
   cSelected = getCell(toGrid(x,y))
 
   if cSelected then if uSelected then
-    uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected, cSelected)
+    -- uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected, cSelected)
+    setUnitMovement(uSelected, cSelected)
   else
     uSelected = cSelected.unit
     if uSelected
