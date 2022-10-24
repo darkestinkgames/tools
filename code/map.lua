@@ -98,15 +98,22 @@ local function newUnit(team, mov, cell)
   obj.x, obj.y = cell.hx, cell.hy
   return obj
 end
+---comment
+---@param cell map.cell
+---@param val number
+---@return map.pathpoint
 local function newPathPt(cell, val)
-  assert( cell, ("Wrong argument `cell` (%s)!"):format(cell) )
+  assert( cell, ("newPathPt(%s, %s)"):format(cell, val) )
   local key = cell.key
   ---@class map.pathpoint
   local obj = {
-    key   = key,   ---@type string
-    cell  = cell,  ---@type map.cell
-    val   = val,   ---@type number
-    from  = nil,   ---@type map.pathpoint
+    key     = key,      ---@type string
+    cell    = cell,
+    val     = val,
+    from    = nil,      ---@type map.pathpoint
+    x       = cell.hx,
+    y       = cell.hy,
+    getPos  = getPos,
   }
   return obj
 end
