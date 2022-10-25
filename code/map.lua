@@ -329,8 +329,9 @@ end
 ---@param cell map.cell
 ---@return map.movpoint[]
 local function newUnitUpdMov(unit, cell)
-  assert(unit, ("newUpdMov(%s, %s)"):format(unit, cell))
-  assert(cell, ("newUpdMov(%s, %s)"):format(unit, cell))
+  assert(unit, ("newUpdMov(`%s`, %s)"):format(unit, cell))
+  assert(cell, ("newUpdMov(%s, `%s`)"):format(unit, cell))
+  assert( not cell.unit, ("setUnitMovement(%s, `%s`.unit)"):format(unit, cell) )
 
   local pp_into = getUnitPathPt(unit, cell)
 
@@ -354,9 +355,8 @@ end
 ---@param unit map.unit
 ---@param cell map.cell
 local function setUnitMovement(unit, cell)
-  assert( unit,           ("setUnitMovement(`unit`, cell)"):format(unit, cell) )
-  assert( cell,           ("setUnitMovement(unit, `cell`)"):format(unit, cell) )
-  assert( not cell.unit,  ("setUnitMovement(unit, `cell.unit`)"):format(unit, cell) )
+  assert( unit,          ("setUnitMovement(`%s`, %s)"):format(unit, cell)      )
+  assert( cell,          ("setUnitMovement(%s, `%s`)"):format(unit, cell)      )
   upmov_list[#upmov_list+1] = newUnitUpdMov(unit, cell)
   setUnitPos(unit, cell)
   unit.pp_grid = getUnitPathGrid(unit)
