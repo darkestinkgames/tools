@@ -142,15 +142,6 @@ local function setColor(name)
   assert( color_name[name], ("Color `%s` is missing!"):format(name) )
   love.graphics.setColor(color_name[name])
 end
----comment
----@param unit map.unit
----@param cell map.cell
-local function setUnitPos(unit, cell)
-  assert(unit, ("setUnitPos(%s, %s)"):format(unit, cell))
-  assert(cell, ("setUnitPos(%s, %s)"):format(unit, cell))
-  unit.cell_pos.unit = nil
-  unit.cell_pos, cell.unit = cell, unit
-end
 
 local function getRadius(k)
   assert( k, ("Wrong argument `k` (%s)!"):format(k) )
@@ -351,16 +342,6 @@ local function addUnitMovPt(unit, cell)
 end
 ---comment
 ---@param unit map.unit
----@param cell map.cell
-local function setUnitMovement(unit, cell)
-  assert( unit,          ("setUnitMovement(`%s`, %s)"):format(unit, cell)      )
-  assert( cell,          ("setUnitMovement(%s, `%s`)"):format(unit, cell)      )
-  addUnitMovPt(unit, cell)
-  setUnitPos(unit, cell)
-  unit.pp_grid = getUnitPathGrid(unit)
-end
----comment
----@param unit map.unit
 ---@param dt number
 local function updMovItem(unit, dt)
   local movpoint = unit.mov_list[#unit.mov_list]
@@ -380,6 +361,26 @@ local function updMovAll(dt)
     then updMovItem(unit, dt) end
   end
 end
+---comment
+---@param unit map.unit
+---@param cell map.cell
+local function setUnitPos(unit, cell)
+  assert(unit, ("setUnitPos(%s, %s)"):format(unit, cell))
+  assert(cell, ("setUnitPos(%s, %s)"):format(unit, cell))
+  unit.cell_pos.unit = nil
+  unit.cell_pos, cell.unit = cell, unit
+  unit.pp_grid = getUnitPathGrid(unit)
+end
+--// ---comment
+--// ---@param unit map.unit
+--// ---@param cell map.cell
+--// local function setUnitMovement(unit, cell)
+--//   assert( unit, ("setUnitMovement(`%s`, %s)"):format(unit, cell) )
+--//   assert( cell, ("setUnitMovement(%s, `%s`)"):format(unit, cell) )
+--//   addUnitMovPt(unit, cell)
+--//   setUnitPos(unit, cell)
+--//   unit.pp_grid = getUnitPathGrid(unit)
+--// end
 
 -- todo <<
 
@@ -488,7 +489,8 @@ function main.select()
 
   if cSelected then if uSelected then
     -- uSelected.pp_grid, uSelected.cell_into = getUnitPathGrid(uSelected, cSelected)
-    setUnitMovement(uSelected, cSelected)
+    addUnitMovPt(uSelected, cSelected)
+    setUnitPos(uSelected, cSelected)
     -- main.deselect()
   else
     uSelected = cSelected.unit
