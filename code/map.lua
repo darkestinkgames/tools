@@ -12,7 +12,7 @@ local uList  ---@type table<string, map.unit>
 local cSelected  ---@type map.cell?
 local uSelected  ---@type map.unit?
 
-local upmov_list = {}  ---@type map.movpoint[]
+local upmov_list = {}  ---@type map.unit[]
 local dt_val = .07
 
 
@@ -36,10 +36,10 @@ local color_name = {
 local function addPosition(obj, x,y)
   obj.x, obj.y = obj.x + x, obj.y + y
 end
-local function getPos(obj)
+local function getPosition(obj)
   return obj.x, obj.y
 end
-local function getPosition(obj, x,y)
+local function getPos(obj, x,y)
   return obj.x - (x or 0), obj.y - (y or 0)
 end
 local function getPosOff(obj, x,y)
@@ -89,14 +89,16 @@ local function newUnit(team, mov, cell)
   assert( not cell.unit, ("The `cell` %s is occupied!"):format(cell.key) )
   ---@class map.unit
   local obj = {
-    team       = team,  ---@type number
-    mov        = mov,   ---@type number
-    cell_pos   = cell,  ---@type map.cell
-    pp_grid    = nil,   ---@type table<string, map.pathpoint>
-    plist      = nil,   ---@type map.pathpoint[]
+    team      = team,  ---@type number
+    mov       = mov,   ---@type number
+    cell_pos  = cell,  ---@type map.cell
+    mov_list  = {},    ---@type map.movpoint[]
+    pp_grid   = nil,   ---@type table<string, map.pathpoint>
+    plist     = nil,   ---@type map.pathpoint[]
     addPosition  = addPosition,
   }
   obj.x, obj.y = cell.hx, cell.hy
+  upmov_list[#upmov_list+1] = obj
   return obj
 end
 ---comment
@@ -327,15 +329,13 @@ end
 ---comment
 ---@param unit map.unit
 ---@param cell map.cell
----@return map.movpoint[]
-local function newUnitUpdMov(unit, cell)
+local function addUnitMovPt(unit, cell)
   assert(unit, ("newUpdMov(`%s`, %s)"):format(unit, cell))
   assert(cell, ("newUpdMov(%s, `%s`)"):format(unit, cell))
   assert( not cell.unit, ("setUnitMovement(%s, `%s`.unit)"):format(unit, cell) )
 
   local pp_into = getUnitPathPt(unit, cell)
 
-  local list = {}
   while pp_into.from do
     ---@class map.movpoint
     local movpoint = {
@@ -344,12 +344,10 @@ local function newUnitUpdMov(unit, cell)
       getPosition  = getPosition,
     }
     movpoint.x, movpoint.y = pp_into:getPos()
-    list[#list+1] = movpoint
+    unit.mov_list[#unit.mov_list+1] = movpoint
 
     pp_into = pp_into.from
   end
-
-  return list
 end
 ---comment
 ---@param unit map.unit
@@ -357,18 +355,18 @@ end
 local function setUnitMovement(unit, cell)
   assert( unit,          ("setUnitMovement(`%s`, %s)"):format(unit, cell)      )
   assert( cell,          ("setUnitMovement(%s, `%s`)"):format(unit, cell)      )
-  upmov_list[#upmov_list+1] = newUnitUpdMov(unit, cell)
+  addUnitMovPt(unit, cell)
   setUnitPos(unit, cell)
   unit.pp_grid = getUnitPathGrid(unit)
 end
 ---comment
----@param list map.movpoint[]
+---@param unit map.unit
 ---@param dt number
-local function updMovItem(list, dt)
-  local movpoint = list[#list]
+local function updMovItem(unit, dt)
+  local movpoint = unit.mov_list[#unit.mov_list]
   if dt >= movpoint.dt then
     movpoint.unit.x, movpoint.unit.y = movpoint:getPosition()
-    table.remove(list)
+    table.remove(unit.mov_list)
   else
     local k = dt / movpoint.dt
     local dx, dy = movpoint.x - movpoint.unit.x, movpoint.y - movpoint.unit.y
@@ -377,13 +375,9 @@ local function updMovItem(list, dt)
   end
 end
 local function updMovAll(dt)
-  for i, list in ipairs(upmov_list) do
-    updMovItem(list, dt)
-    if #list == 0
-    then
-      --! відстежити прольоти
-      table.remove(upmov_list, i)
-    end
+  for i, unit in ipairs(upmov_list) do
+    if #unit.mov_list ~= 0
+    then updMovItem(unit, dt) end
   end
 end
 
