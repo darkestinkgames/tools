@@ -40,6 +40,7 @@ local team_color = {
 }
 
 
+
 --!-- -------------------- інструментарій
 
 local function toKey(x,y)
@@ -73,37 +74,120 @@ local function getCell(gx,gy)
   return cellGrid[key]
 end
 
-local function forPairs(t, fn, ...)
-  for k, v in pairs(t)
-  do fn(v, ...) end
-end
-local function forPairsK(t, fn, ...)
-  for k, v in pairs(t)
-  do fn(k, v, ...) end
-end
-
 local function clear(t)
   for k in pairs(t)
   do t[k] = nil end
 end
 
 
+
 --!-- -------------------- 
 
--- функції для pairs’ів
-
---*-- ------- якщо є розмежування
-
--- одноразові функції
+local core = {}
 
 
---!-- -------------------- new
+function core:forPairs(t, fn, ...)
+  for k, v in pairs(t)
+  do fn(self, v, ...) end
+end
+
+function core:forPairsK(t, fn, ...)
+  for k, v in pairs(t)
+  do fn(self, k, v, ...) end
+end
+
+
+--!-- 
+
+---comment
+---@param unit unit_ent
+function core:addMoveList(unit)
+  assert(not unit.cell)
+
+  local cell = unit.movto_cell
+  local pathpoint_into = unit.pp_grid[cell.key]
+  local x,y
+
+  while pathpoint_into.from do
+    x,y = pathpoint_into.cell.hx, pathpoint_into.cell.hy
+    unit.mov_grid[#unit.mov_grid+1] = core:newMovePoint(x,y)
+    pathpoint_into = pathpoint_into.from
+  end
+end
+---comment
+---@param cell cell_ent
+---@param unit unit_ent
+function core:addUnitPathpoint(cell, unit)
+  local key = cell.key
+  local pp = core:newPathpoint(cell)
+  unit.pp_grid[key] = pp
+end
+
+---comment
+---@param cell cell_ent
+function core:drawCell(cell, w,h)
+  assert(cell, ("drawCell(%s)"):format(cell))
+  local x,y = cell.x, cell.y
+
+  setColor(tile_color[cell.tile])
+  rectangle("fill", x,y, w,h)
+end
+---comment
+---@param unit unit_ent
+function core:drawUnit(unit)
+  setColor(team_color[unit.team])
+  local x,y = getCoords(unit.screen)
+  circle("fill", x,y, uRadius)
+end
+
+
+
+--!-- 
+
+---comment
+---@param gx number
+---@param gy number
+---@param tile tile_name?
+function core:addCell(gx,gy, tile)
+
+  local cell = core:newCell(gx,gy)
+  cell.tile = tile or "plain"
+
+  cellGrid[cell.key] = cell
+end
+---comment
+---@param cell cell_ent
+---@param team number?
+---@param mov number?
+---@param movement movement_name?
+function core:addUnit(cell, team, mov, movement)
+  assert(cell, ("addUnit(team, %s, mov, movement)"):format(cell))
+  assert(not cell.unit, ("addUnit(team, cell.unit (%s), mov, movement)"):format(cell.unit))
+
+  local unit = core:newUnit(team or 2, mov or 4, movement or "walk")
+  cell.unit, unit.cell = unit, cell
+  setCoords(unit.screen, cell.hx,cell.hy)
+
+  unitList[#unitList+1] = unit
+  core:forPairs(cellGrid, core.addUnitPathpoint, unit)
+end
+function core:addUnitRandom(team, mov, movement)
+  local cell ---@type cell_ent
+  repeat cell = getCell(math.random(mWidth), math.random(mHeight))
+  until not cell.unit
+  core:addUnit(cell, team, mov, movement)
+end
+
+function core:getMouse()
+  local x,y = love.mouse.getPosition()
+  return x,y
+end
 
 ---comment
 ---@param gx number
 ---@param gy number
 ---@return cell_ent
-local function newCell(gx,gy)
+function core:newCell(gx,gy)
   local key    = toKey(gx,gy)
   local x,y    = toScreen(gx,gy)
   local hx,hy  = toScreen(.5 + gx, .5 + gy)
@@ -128,7 +212,7 @@ end
 ---@param cell cell_ent
 ---@param val number?
 ---@return pathpoint_cpt
-local function newPathpoint(cell, val)
+function core:newPathpoint(cell, val)
   ---@class pathpoint_cpt
   local obj = {
     cell  = cell,  ---@type cell_ent
@@ -141,7 +225,7 @@ end
 ---@param x number
 ---@param y number
 ---@param dt number?
-local function newMovePoint(x,y, dt)
+function core:newMovePoint(x,y, dt)
   ---@class movepoint_cpt
   local obj = {
     x   = x,
@@ -155,7 +239,7 @@ end
 ---@param mov number
 ---@param movement movement_name
 ---@return unit_ent
-local function newUnit(team, mov, movement)
+function core:newUnit(team, mov, movement)
   ---@class unit_ent
   local obj = {
     team        = team,      ---@type number
@@ -173,101 +257,28 @@ local function newUnit(team, mov, movement)
   return obj
 end
 
-
---!-- -------------------- set
-
 ---comment
 ---@param unit unit_ent
 ---@param cell cell_ent
-local function setUnitCell(unit, cell)
+function core:setUnitCell(unit, cell)
   assert(not cell.unit)
 
   unit.cell.unit = nil
   cell.unit, unit.cell = unit, cell
 end
 
---*-- -------
+function core:drawCellHover()
+  local x,y = self:getMouse()
+  local cell = getCell(toGrid(x,y))
 
-
---!-- -------------------- draw
-
----comment
----@param cell cell_ent
-local function drawCell(cell, w,h)
-  assert(cell, ("drawCell(%s)"):format(cell))
-  local x,y = cell.x, cell.y
-
-  setColor(tile_color[cell.tile])
-  rectangle("fill", x,y, w,h)
-end
----comment
----@param unit unit_ent
-local function drawUnit(unit)
-  setColor(team_color[unit.team])
-  local x,y = getCoords(unit.screen)
-  circle("fill", x,y, uRadius)
-end
-
---*-- ----- ----- >>
-
-
---!-- -------------------- add
-
----comment
----@param cell cell_ent
----@param unit unit_ent
-local function addUnitPathpoint(cell, unit)
-  local key = cell.key
-  local pp = newPathpoint(cell)
-  unit.pp_grid[key] = pp
-end
-
---*-- ----- ----- >>
-
----comment
----@param gx number
----@param gy number
----@param tile tile_name?
-local function addCell(gx,gy, tile)
-
-  local cell = newCell(gx,gy)
-  cell.tile = tile or "plain"
-
-  cellGrid[cell.key] = cell
-end
----comment
----@param cell cell_ent
----@param team number?
----@param mov number?
----@param movement movement_name?
-local function addUnit(cell, team, mov, movement)
-  assert(cell, ("addUnit(team, %s, mov, movement)"):format(cell))
-  assert(not cell.unit, ("addUnit(team, cell.unit (%s), mov, movement)"):format(cell.unit))
-
-  local unit = newUnit(team or 2, mov or 4, movement or "walk")
-  cell.unit, unit.cell = unit, cell
-  setCoords(unit.screen, cell.hx,cell.hy)
-
-  unitList[#unitList+1] = unit
-  forPairs(cellGrid, addUnitPathpoint, unit)
-end
-local function addUnitRandom(team, mov, movement)
-  local cell ---@type cell_ent
-  repeat cell = getCell(math.random(mWidth), math.random(mHeight))
-  until not cell.unit
-  addUnit(cell, team, mov, movement)
-end
----comment
----@param unit unit_ent
-local function addMoveList(unit, cell)
-  local pathpoint_into = unit.pp_grid[cell.key]
-  local x,y
-  while pathpoint_into.from do
-    x,y = pathpoint_into.cell.hx, pathpoint_into.cell.hy
-    unit.mov_grid[#unit.mov_grid+1] = newMovePoint(x,y)
-    pathpoint_into = pathpoint_into.from
+  if cell then
+    x = x - x % tWidth
+    y = y - y % tHeight
+    setColor(1,1,1, .25)
+    rectangle("fill", x,y, tWidth,tHeight)
   end
 end
+
 
 
 --!-- --------------------
@@ -281,21 +292,22 @@ function main.new(w,h)
   mWidth,mHeight = w,h
 
   for gy = 1, h do for gx = 1, w do
-    addCell(gx,gy)
+    core:addCell(gx,gy)
   end end
 end
 
 function main.random(w,h)
   main.new(w,h)
-  addUnitRandom(1, 4)
-  addUnitRandom(1, 5)
-  addUnitRandom(2, 4)
-  addUnitRandom(2, 5)
+  core:addUnitRandom(1, 4)
+  core:addUnitRandom(1, 5)
+  core:addUnitRandom(2, 4)
+  core:addUnitRandom(2, 5)
 end
 
 function main.draw()
-  forPairs(cellGrid, drawCell, tWidth-1,tHeight-1)
-  forPairs(unitList, drawUnit)
+  core:forPairs(cellGrid, core.drawCell, tWidth-1,tHeight-1)
+  core:drawCellHover()
+  core:forPairs(unitList, core.drawUnit)
 end
 
 function main.update(dt)end
@@ -306,7 +318,7 @@ function main.deselect()end
 
 return main
 
--- new — створює та повертає
 -- get — отримує існуюче
 -- set — встановлює потрібне
 -- add — додає щось кудись
+-- new — створює та повертає
