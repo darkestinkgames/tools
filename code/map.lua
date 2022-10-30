@@ -1,3 +1,4 @@
+--[[
 math.randomseed(os.time())
 
 -- -- -- >>> ядро
@@ -509,3 +510,4 @@ end
 -- -- -- >>>
 
 return main
+]]

@@ -1,3 +1,4 @@
+--[[
 math.randomseed(os.time())
 
 local ent_list = {}
@@ -209,3 +210,4 @@ function main.update(dt)
 end
 
 return main
+]]

@@ -1,12 +1,12 @@
 love.graphics.setBackgroundColor( .08, .08, .08 )
 
-local map = require 'code/map2'
+local map = require 'code/map3'
 
 -- -- -- >>>
 
 function love.load(...)
   -- map.tileRate(4, 1)
-  map.newGridRandom(12,12)
+  map.new(12,12)
   -- map.addUnit(1, 4)
   -- map.addUnit(1, 5)
   -- map.addUnit(2, 4)
