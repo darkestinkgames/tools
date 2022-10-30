@@ -4,6 +4,15 @@ math.randomseed(os.time())
 
 --!-- --------------------
 
+local setColor   = love.graphics.setColor
+local rectangle  = love.graphics.rectangle
+local circle     = love.graphics.circle
+local gprint     = love.graphics.print
+
+
+
+--!-- --------------------
+
 local tWidth, tHeight = 64,48
 
 local mWidth, mHeight
@@ -21,6 +30,15 @@ local unitList = {}  ---@type unit_ent[]
 
 ---@alias movement_name
 ---| "walk"
+
+local tile_color = {
+  plain = { .1, .25, .15 },
+  water = { .1, .15, .25 },
+}
+local team_color = {
+  { .2, .8, .2 },
+  { .8, .2, .2 },
+}
 
 
 
@@ -141,6 +159,16 @@ end
 
 ---comment
 ---@param cell cell_ent
+local function drawCell(cell, w,h)
+  assert(cell, ("drawCell(%s)"):format(cell))
+  local x,y = cell.x, cell.y
+
+  setColor(tile_color[cell.tile])
+  rectangle("fill", x,y, w,h)
+end
+
+---comment
+---@param cell cell_ent
 ---@param unit unit_ent
 local function addUnitPathpoint(cell, unit)
   local key = cell.key
@@ -200,9 +228,15 @@ function main.new(w,h)
     addCell(gx,gy)
   end end
 end
-function main.draw()end
+
+function main.draw()
+  forP(cellGrid, drawCell, tWidth-1,tHeight-1)
+end
+
 function main.update(dt)end
+
 function main.select(x,y)end
+
 function main.deselect()end
 
 return main

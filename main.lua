@@ -5,12 +5,7 @@ local map = require 'code/map3'
 -- -- -- >>>
 
 function love.load(...)
-  -- map.tileRate(4, 1)
   map.new(12,12)
-  -- map.addUnit(1, 4)
-  -- map.addUnit(1, 5)
-  -- map.addUnit(2, 4)
-  -- map.addUnit(2, 5)
 end
 function love.draw()
   map.draw()
