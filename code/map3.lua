@@ -1,8 +1,7 @@
 math.randomseed(os.time())
 
 
-
---!-- --------------------
+--!-- -------------------- навпростець
 
 local setColor   = love.graphics.setColor
 local rectangle  = love.graphics.rectangle
@@ -10,10 +9,11 @@ local circle     = love.graphics.circle
 local gprint     = love.graphics.print
 
 
-
---!-- --------------------
+--!-- -------------------- про карту
 
 local tWidth, tHeight = 64,48
+local tRadius = math.min(tWidth,tHeight) * .5
+local uRadius = math.floor(tRadius * .9)
 
 local mWidth, mHeight
 local cellGrid = {}  ---@type table<string, cell_ent>
@@ -21,8 +21,7 @@ local cellGrid = {}  ---@type table<string, cell_ent>
 local unitList = {}  ---@type unit_ent[]
 
 
-
---!-- --------------------
+--!-- -------------------- енумерашки
 
 ---@alias tile_name
 ---| "plain"
@@ -41,8 +40,7 @@ local team_color = {
 }
 
 
-
---!-- --------------------
+--!-- -------------------- інструментарій
 
 local function toKey(x,y)
   return ("x%sy%s"):format(x,y)
@@ -56,6 +54,9 @@ end
 
 local function addCoords(obj, x,y)
   obj.x, obj.y = obj.x + x, obj.y + y
+end
+local function setCoords(obj, x,y)
+  obj.x, obj.y = x,y
 end
 local function getCoords(obj)
   return obj.x, obj.y
@@ -72,11 +73,11 @@ local function getCell(gx,gy)
   return cellGrid[key]
 end
 
-local function forP(t, fn, ...)
+local function forPairs(t, fn, ...)
   for k, v in pairs(t)
   do fn(v, ...) end
 end
-local function forPK(t, fn, ...)
+local function forPairsK(t, fn, ...)
   for k, v in pairs(t)
   do fn(k, v, ...) end
 end
@@ -87,9 +88,13 @@ local function clear(t)
 end
 
 
-
 --!-- -------------------- 
 
+-- функції для pairs’ів
+
+--*-- ------- якщо є розмежування
+
+-- одноразові функції
 
 
 --!-- -------------------- new
@@ -123,12 +128,25 @@ end
 ---@param cell cell_ent
 ---@param val number?
 ---@return pathpoint_cpt
-local function newPathPoint(cell, val)
+local function newPathpoint(cell, val)
   ---@class pathpoint_cpt
   local obj = {
     cell  = cell,  ---@type cell_ent
     val   = val,   ---@type number?
-    from  = nil,   ---@type pathpoint_cpt?
+    from  = nil,   ---@type pathpoint_cpt
+  }
+  return obj
+end
+---comment
+---@param x number
+---@param y number
+---@param dt number?
+local function newMovePoint(x,y, dt)
+  ---@class movepoint_cpt
+  local obj = {
+    x   = x,
+    y   = y,
+    dt  = dt or .2,
   }
   return obj
 end
@@ -147,15 +165,31 @@ local function newUnit(team, mov, movement)
     mov_grid    = {},        ---@type table<string, pathpoint_cpt>
     cell        = nil,       ---@type cell_ent
     movto_cell  = nil,       ---@type cell_ent?
+    screen      = {
+      x = nil,               ---@type number
+      y = nil,               ---@type number
+    }
   }
   return obj
 end
 
 
+--!-- -------------------- set
 
---!-- -------------------- 
+---comment
+---@param unit unit_ent
+---@param cell cell_ent
+local function setUnitCell(unit, cell)
+  assert(not cell.unit)
 
---?-- мультишот
+  unit.cell.unit = nil
+  cell.unit, unit.cell = unit, cell
+end
+
+--*-- -------
+
+
+--!-- -------------------- draw
 
 ---comment
 ---@param cell cell_ent
@@ -166,17 +200,29 @@ local function drawCell(cell, w,h)
   setColor(tile_color[cell.tile])
   rectangle("fill", x,y, w,h)
 end
+---comment
+---@param unit unit_ent
+local function drawUnit(unit)
+  setColor(team_color[unit.team])
+  local x,y = getCoords(unit.screen)
+  circle("fill", x,y, uRadius)
+end
+
+--*-- ----- ----- >>
+
+
+--!-- -------------------- add
 
 ---comment
 ---@param cell cell_ent
 ---@param unit unit_ent
 local function addUnitPathpoint(cell, unit)
   local key = cell.key
-  local pp = newPathPoint(cell)
+  local pp = newPathpoint(cell)
   unit.pp_grid[key] = pp
 end
 
---?-- ваншот
+--*-- ----- ----- >>
 
 ---comment
 ---@param gx number
@@ -199,19 +245,29 @@ local function addUnit(cell, team, mov, movement)
   assert(not cell.unit, ("addUnit(team, cell.unit (%s), mov, movement)"):format(cell.unit))
 
   local unit = newUnit(team or 2, mov or 4, movement or "walk")
+  cell.unit, unit.cell = unit, cell
+  setCoords(unit.screen, cell.hx,cell.hy)
 
   unitList[#unitList+1] = unit
+  forPairs(cellGrid, addUnitPathpoint, unit)
 end
-
-
-
---!-- --------------------
-
-
-
-
---!-- --------------------
-
+local function addUnitRandom(team, mov, movement)
+  local cell ---@type cell_ent
+  repeat cell = getCell(math.random(mWidth), math.random(mHeight))
+  until not cell.unit
+  addUnit(cell, team, mov, movement)
+end
+---comment
+---@param unit unit_ent
+local function addMoveList(unit, cell)
+  local pathpoint_into = unit.pp_grid[cell.key]
+  local x,y
+  while pathpoint_into.from do
+    x,y = pathpoint_into.cell.hx, pathpoint_into.cell.hy
+    unit.mov_grid[#unit.mov_grid+1] = newMovePoint(x,y)
+    pathpoint_into = pathpoint_into.from
+  end
+end
 
 
 --!-- --------------------
@@ -229,8 +285,17 @@ function main.new(w,h)
   end end
 end
 
+function main.random(w,h)
+  main.new(w,h)
+  addUnitRandom(1, 4)
+  addUnitRandom(1, 5)
+  addUnitRandom(2, 4)
+  addUnitRandom(2, 5)
+end
+
 function main.draw()
-  forP(cellGrid, drawCell, tWidth-1,tHeight-1)
+  forPairs(cellGrid, drawCell, tWidth-1,tHeight-1)
+  forPairs(unitList, drawUnit)
 end
 
 function main.update(dt)end
@@ -241,7 +306,7 @@ function main.deselect()end
 
 return main
 
--- new
--- get
--- set
--- add
+-- new — створює та повертає
+-- get — отримує існуюче
+-- set — встановлює потрібне
+-- add — додає щось кудись

@@ -5,7 +5,7 @@ local map = require 'code/map3'
 -- -- -- >>>
 
 function love.load(...)
-  map.new(12,12)
+  map.random(12,12)
 end
 function love.draw()
   map.draw()
