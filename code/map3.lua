@@ -14,6 +14,7 @@ local gprint     = love.graphics.print
 local tWidth, tHeight = 64,48
 local tRadius = math.min(tWidth,tHeight) * .5
 local uRadius = math.floor(tRadius * .9)
+local pRadius = 3
 
 local mWidth, mHeight
 local cellGrid = {}  ---@type table<string, cell_ent>
@@ -89,44 +90,25 @@ end
 
 local core = {}
 
-
-function core:forPairs(t, fn, ...)
-  for k, v in pairs(t)
-  do fn(self, v, ...) end
-end
-
-function core:forPairsK(t, fn, ...)
-  for k in pairs(t)
-  do fn(self, k, ...) end
-end
-
-function core:forPairsKV(t, fn, ...)
-  for k, v in pairs(t)
-  do fn(self, k, v, ...) end
-end
-
-
 --!-- 
 
----comment
----@param unit unit_ent
-function core:addMoveList(unit)
-  assert(not unit.cell)
-
-  local cell = unit.movto_cell
-  local pathpoint_into = unit.pp_grid[cell.key]
-  local x,y
-
-  while pathpoint_into.from do
-    x,y = pathpoint_into.cell.hx, pathpoint_into.cell.hy
-    unit.mov_grid[#unit.mov_grid+1] = core:newMovePoint(x,y)
-    pathpoint_into = pathpoint_into.from
-  end
+local function forPairs(t, fn, ...)
+  for k, v in pairs(t)
+  do fn(v, ...) end
 end
+local function forPairsK(t, fn, ...)
+  for k in pairs(t)
+  do fn(k, ...) end
+end
+local function forPairsKV(t, fn, ...)
+  for k, v in pairs(t)
+  do fn(k, v, ...) end
+end
+
 ---comment
 ---@param cell cell_ent
 ---@param unit unit_ent
-function core:addUnitPathpoint(cell, unit)
+local function addUnitPathpoint(cell, unit)
   local key = cell.key
   local pp = core:newPathpoint(cell)
   unit.pp_grid[key] = pp
@@ -134,7 +116,7 @@ end
 
 ---comment
 ---@param cell cell_ent
-function core:drawCell(cell, w,h)
+local function drawCell(cell, w,h)
   assert(cell, ("drawCell(%s)"):format(cell))
   local x,y = cell.x, cell.y
 
@@ -143,22 +125,48 @@ function core:drawCell(cell, w,h)
 end
 ---comment
 ---@param unit unit_ent
-function core:drawUnit(unit)
+local function drawUnit(unit)
   setColor(team_color[unit.team])
   local x,y = getCoords(unit.screen)
   circle("fill", x,y, uRadius)
 end
-
+---comment
+---@param pathpoint pathpoint_cpt
+local function drawUnitMovGrid(pathpoint)
+  print("!")
+  setColor(white_color)
+  local x,y = pathpoint.cell.hx, pathpoint.cell.hy
+  circle("fill", x,y, pRadius)
+end
 ---comment
 ---@param key string
 ---@param pathpoint pathpoint_cpt
 ---@param unit unit_ent
-function core:setUnitMovetoGrid(key, pathpoint, unit)
+local function setUnitMovetoGrid(key, pathpoint, unit)
   if unit.mov >= pathpoint.val
   then unit.mov_grid[key] = pathpoint end
 end
+---comment
+---@param unit unit_ent
+local function setUnitPathpoinGrid(unit)
+  local pp_grid = unit.pp_grid
+  local check_list = {unit.cell}
+  local from_pp, from_cell, into_pp, into_val
+  local i = 1
 
+  while check_list[i] do
+    from_cell = check_list[i]
+    from_pp = core:getPathpoint(unit, from_cell)
+    for index, into_cell in ipairs(from_cell.nlist) do
+      into_pp = core:getPathpoint(unit, into_cell)
+      into_val = core:getUnitMoveCost(unit, into_cell) + from_pp.val
+      check_list[#check_list+1] = core:setPathpointValue(into_pp, into_val, from_pp)
+    end
+    i = i + 1
+  end
 
+  forPairsKV(pp_grid, addUnitPathpoint, unit)
+end
 
 --!-- 
 
@@ -174,6 +182,21 @@ function core:addCell(gx,gy, tile)
   cellGrid[cell.key] = cell
 end
 ---comment
+---@param unit unit_ent
+function core:addMoveList(unit)
+  assert(not unit.movto_cell)
+
+  local cell = unit.movto_cell
+  local pathpoint_into = unit.pp_grid[cell.key]
+  local x,y
+
+  while pathpoint_into.from do
+    x,y = pathpoint_into.cell.hx, pathpoint_into.cell.hy
+    unit.mov_grid[#unit.mov_grid+1] = core:newMovePoint(x,y)
+    pathpoint_into = pathpoint_into.from
+  end
+end
+---comment
 ---@param cell cell_ent
 ---@param team number?
 ---@param mov number?
@@ -187,7 +210,7 @@ function core:addUnit(cell, team, mov, movement)
   setCoords(unit.screen, cell.hx,cell.hy)
 
   unitList[#unitList+1] = unit
-  core:forPairs(cellGrid, core.addUnitPathpoint, unit)
+  forPairs(unitList, setUnitPathpoinGrid)
 end
 function core:addUnitRandom(team, mov, movement)
   local cell ---@type cell_ent
@@ -205,7 +228,11 @@ end
 ---@param unit unit_ent
 ---@param cell cell_ent
 function core:getPathpoint(unit, cell)
-  return unit.pp_grid[cell.key]
+  local grid = unit.pp_grid
+  local key = cell.key
+  if not grid[key]
+  then grid[key] = self:newPathpoint(cell) end
+  return grid[key]
 end
 ---comment
 ---@param unit unit_ent
@@ -316,27 +343,6 @@ function core:setUnitCell(unit, cell)
   unit.cell.unit = nil
   cell.unit, unit.cell = unit, cell
 end
----comment
----@param unit unit_ent
-function core:setUnitPathpoinGrid(unit)
-  local pp_grid = unit.pp_grid
-  local check_list = {unit.cell}
-  local from_pp, from_cell, into_pp, into_val
-  local i = 1
-
-  while check_list[i] do
-    from_cell = check_list[i]
-    from_pp = self:getPathpoint(unit, from_cell)
-    for index, into_cell in ipairs(from_cell.nlist) do
-      into_pp = self:getPathpoint(unit, into_cell)
-      into_val = self:getUnitMoveCost(unit, into_cell) + from_pp.val
-      check_list[#check_list+1] = self:setPathpointValue(into_pp, into_val, from_pp)
-    end
-    i = i + 1
-  end
-
-  self:forPairsKV(pp_grid, self.setUnitMovetoGrid, unit)
-end
 
 function core:drawCellHover()
   local x,y = self:getMouse()
@@ -383,9 +389,11 @@ function main.random(w,h)
 end
 
 function main.draw()
-  core:forPairs(cellGrid, core.drawCell, tWidth-1,tHeight-1)
+  forPairs(cellGrid, drawCell, tWidth-1,tHeight-1)
   core:drawCellHover()
-  core:forPairs(unitList, core.drawUnit)
+  if selUnit
+  then forPairs(selUnit.mov_grid, drawUnitMovGrid) end
+  forPairs(unitList, drawUnit)
   core:drawUnitSel()
 end
 
