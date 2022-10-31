@@ -20,6 +20,9 @@ local cellGrid = {}  ---@type table<string, cell_ent>
 
 local unitList = {}  ---@type unit_ent[]
 
+local selCell ---@type cell_ent?
+local selUnit ---@type unit_ent?
+
 
 --!-- -------------------- енумерашки
 
@@ -38,6 +41,7 @@ local team_color = {
   { .2, .8, .2 },
   { .8, .2, .2 },
 }
+local white_color = {1, 1, 1}
 
 
 
@@ -178,6 +182,7 @@ function core:addUnitRandom(team, mov, movement)
   core:addUnit(cell, team, mov, movement)
 end
 
+
 function core:getMouse()
   local x,y = love.mouse.getPosition()
   return x,y
@@ -278,6 +283,13 @@ function core:drawCellHover()
     rectangle("fill", x,y, tWidth,tHeight)
   end
 end
+function core:drawUnitSel()
+  if selUnit then
+    local x,y = getCoords(selUnit.screen)
+    setColor(white_color)
+    circle("line", x,y, uRadius)
+  end
+end
 
 
 
@@ -308,13 +320,27 @@ function main.draw()
   core:forPairs(cellGrid, core.drawCell, tWidth-1,tHeight-1)
   core:drawCellHover()
   core:forPairs(unitList, core.drawUnit)
+  core:drawUnitSel()
 end
 
 function main.update(dt)end
 
-function main.select(x,y)end
+function main.select()
+  local x,y = core:getMouse()
+  selCell = getCell(toGrid(x,y))
 
-function main.deselect()end
+  if selCell then
+    local unit = selCell.unit
+    if selUnit then
+    else
+      selUnit = unit
+    end
+  end
+end
+
+function main.deselect()
+  selUnit = nil
+end
 
 return main
 
