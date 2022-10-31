@@ -96,6 +96,11 @@ function core:forPairs(t, fn, ...)
 end
 
 function core:forPairsK(t, fn, ...)
+  for k in pairs(t)
+  do fn(self, k, ...) end
+end
+
+function core:forPairsKV(t, fn, ...)
   for k, v in pairs(t)
   do fn(self, k, v, ...) end
 end
@@ -144,6 +149,15 @@ function core:drawUnit(unit)
   circle("fill", x,y, uRadius)
 end
 
+---comment
+---@param key string
+---@param pathpoint pathpoint_cpt
+---@param unit unit_ent
+function core:setUnitMovetoGrid(key, pathpoint, unit)
+  if unit.mov >= pathpoint.val
+  then unit.mov_grid[key] = pathpoint end
+end
+
 
 
 --!-- 
@@ -186,6 +200,23 @@ end
 function core:getMouse()
   local x,y = love.mouse.getPosition()
   return x,y
+end
+---comment
+---@param unit unit_ent
+---@param cell cell_ent
+function core:getPathpoint(unit, cell)
+  return unit.pp_grid[cell.key]
+end
+---comment
+---@param unit unit_ent
+---@param cell cell_ent
+function core:getUnitMoveCost(unit, cell)
+  local impass = unit.mov + 1
+  if cell.unit then if cell.unit ~= unit then
+    return impass
+  end end
+  if cell.tile == "water" then return 2 end
+  return 1
 end
 
 ---comment
@@ -263,6 +294,20 @@ function core:newUnit(team, mov, movement)
 end
 
 ---comment
+---@param pp pathpoint_cpt
+---@param value number
+---@param from pathpoint_cpt
+function core:setPathpointValue(pp, value, from)
+  if not pp.val
+  then pp.val = value + 1 end
+  if pp.val > value then
+    pp.val = value
+    pp.from = from
+    return pp.cell
+  end
+  return nil
+end
+---comment
 ---@param unit unit_ent
 ---@param cell cell_ent
 function core:setUnitCell(unit, cell)
@@ -270,6 +315,27 @@ function core:setUnitCell(unit, cell)
 
   unit.cell.unit = nil
   cell.unit, unit.cell = unit, cell
+end
+---comment
+---@param unit unit_ent
+function core:setUnitPathpoinGrid(unit)
+  local pp_grid = unit.pp_grid
+  local check_list = {unit.cell}
+  local from_pp, from_cell, into_pp, into_val
+  local i = 1
+
+  while check_list[i] do
+    from_cell = check_list[i]
+    from_pp = self:getPathpoint(unit, from_cell)
+    for index, into_cell in ipairs(from_cell.nlist) do
+      into_pp = self:getPathpoint(unit, into_cell)
+      into_val = self:getUnitMoveCost(unit, into_cell) + from_pp.val
+      check_list[#check_list+1] = self:setPathpointValue(into_pp, into_val, from_pp)
+    end
+    i = i + 1
+  end
+
+  self:forPairsKV(pp_grid, self.setUnitMovetoGrid, unit)
 end
 
 function core:drawCellHover()
