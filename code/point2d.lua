@@ -122,9 +122,19 @@ function point2d.byPointM(a,b, len) ---@return mod.Point
   return a + delta * k
 end
 
-function point2d.byRadian(a, rad, len)end
+function point2d.byRadian(a, rad, len) ---@return mod.Point
+  assert(a and rad and len, ("byRadian(%s, %s, %s)"):format(a, rad, len))
+  if len == 0 then return point2d.new(a:get()) end
+  local b = point2d.new(math.cos(rad), math.sin(rad))
+  return b * len + a
+end
 
-function point2d.byDegree(a, deg, len)end
+function point2d.byDegree(a, deg, len) ---@return mod.Point
+  assert(a and deg and len, ("byRadian(%s, %s, %s)"):format(a, deg, len))
+  if len == 0 then return point2d.new(a:get()) end
+  local rad = deg * math.pi / 180
+  return point2d.byRadian(a, rad, len)
+end
 
 
 -- 
