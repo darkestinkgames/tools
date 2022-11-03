@@ -77,13 +77,6 @@ end
 
 -- 
 
-function point2d.new(x,y) ---@return mod.Point
-  return setmetatable({
-    x = x,
-    y = y,
-  }, mtPoint)
-end
-
 function point2d.length(a,b) ---@return number
   assert(a and b, ("length(%s,%s)"):format(a,b))
   if a == b then return 0 end
@@ -102,6 +95,19 @@ function point2d.degree(a,b) ---@return number
   assert(a and b, ("degree(%s,%s)"):format(a,b))
   if a == b then return 0 end
   return point2d.radian(a,b) * 180 / math.pi
+end
+
+function point2d.perimeter(a,b) ---@return number
+  assert(a and b, ("degree(%s,%s)"):format(a,b))
+  return point2d.length(a,b) * 2 * math.pi
+end
+
+
+function point2d.new(x,y) ---@return mod.Point
+  return setmetatable({
+    x = x,
+    y = y,
+  }, mtPoint)
 end
 
 function point2d.byPoint(a,b, len) ---@return mod.Point
