@@ -85,24 +85,46 @@ function point2d.new(x,y) ---@return mod.Point
 end
 
 function point2d.length(a,b) ---@return number
-  assert(a and b, ("length(a,b)"):format(a,b))
+  assert(a and b, ("length(%s,%s)"):format(a,b))
   if a == b then return 0 end
   local delta = (b - a) ^ 2
   return (delta.x + delta.y) ^ .5
 end
 
 function point2d.radian(a,b) ---@return number
-  assert(a and b, ("radian(a,b)"):format(a,b))
+  assert(a and b, ("radian(%s,%s)"):format(a,b))
   if a == b then return 0 end
   local delta = b - a
   return math.atan2(delta.y, delta.x)
 end
 
 function point2d.degree(a,b) ---@return number
-  assert(a and b, ("degree(a,b)"):format(a,b))
+  assert(a and b, ("degree(%s,%s)"):format(a,b))
   if a == b then return 0 end
   return point2d.radian(a,b) * 180 / math.pi
 end
+
+function point2d.byPoint(a,b, len) ---@return mod.Point
+  assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
+  if len == 0 or a == b then return point2d.new(a:get()) end
+  local delta = b - a
+  local length = point2d.length(a,b)
+  local k = len / length
+  return a + delta * k
+end
+
+function point2d.byPointM(a,b, len) ---@return mod.Point
+  assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
+  if len == 0 or a == b then return point2d.new(a:get()) end
+  local delta = b - a
+  local length = point2d.length(a,b)
+  local k = math.max(0, math.min(1, len / length))
+  return a + delta * k
+end
+
+function point2d.byRadian(a, rad, len)end
+
+function point2d.byDegree(a, deg, len)end
 
 
 -- 

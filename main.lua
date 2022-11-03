@@ -16,6 +16,7 @@ end
 function love.draw()
   circle("fill", a.x,a.y, 16)
   circle("line", b.x,b.y, 8)
+  circle("line", c.x,c.y, 4)
 end
 function love.update(dt)
 end
