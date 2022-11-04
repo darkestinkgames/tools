@@ -1,7 +1,7 @@
 
 local point2d = {}
 
-local Point = { ---@class cpt.Point
+local Point = { ---@class mod.Point
   x = 0,
   y = 0,
 }
@@ -9,45 +9,45 @@ local Point = { ---@class cpt.Point
 local mtPoint = {}
 
 
---------------------------------------------------
-
-local function check(a, b) ---@return cpt.Point, cpt.Point
-  if type(a) == "number" then a = point2d.new(a, a) end
-  if type(b) == "number" then b = point2d.new(b, b) end
-  assert(type(a) == "table" and type(b) == "table", "Only `table` or `number` to use!")
-  return a, b
-end
-
 -- 
 
+local function check(a, b) ---@return mod.Point, number, number
+  if type(a) == "number" and type(b) == "table"
+  then return b, a,a end
+  if type(b) == "number" and type(a) == "table"
+  then return a, b,b end
+  return a, b.x,b.y
+end
+
+
 local function add(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x + b.x, a.y + b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x + x, c.y + y)
 end
 
 local function sub(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x - b.x, a.y - b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x - x, c.y - y)
 end
 
 local function mul(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x * b.x, a.y * b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x * x, c.y * y)
 end
 
 local function div(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x / b.x, a.y / b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x / x, c.y / y)
 end
 
 local function mod(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x % b.x, a.y % b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x % x, c.y % y)
 end
 
 local function pow(a, b)
-  a, b = check(a,b)
-  return point2d.new(a.x ^ b.x, a.y ^ b.y)
+  local c, x,y = check(a,b)
+  return point2d.new(c.x ^ x, c.y ^ y)
 end
 
 local function unm(a) -- норм чи посиплеться? 
@@ -58,6 +58,7 @@ local function eq(a,b)
   assert(type(a) == "table" and type(b) == "table")
   return a.x == b.x and a.y == b.y
 end
+
 
 -- 
 
@@ -73,12 +74,8 @@ function Point:set(x,y)
   self.x,self.y = x,y
 end
 
-function Point:setP(pt)
-  self.x,self.y = pt.x,pt.y
-end
 
-
---------------------------------------------------
+-- 
 
 function point2d.length(a,b) ---@return number
   assert(a and b, ("length(%s,%s)"):format(a,b))
@@ -105,41 +102,40 @@ function point2d.perimeter(a,b) ---@return number
   return point2d.length(a,b) * 2 * math.pi
 end
 
--- 
 
-function point2d.new(x,y) ---@return cpt.Point
+function point2d.new(x,y) ---@return mod.Point
   return setmetatable({
     x = x,
     y = y,
   }, mtPoint)
 end
 
-function point2d.byPoint(a,b, len) ---@return cpt.Point
+function point2d.byPoint(a,b, len) ---@return mod.Point
   assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
   if len == 0 or a == b then return point2d.new(a:get()) end
   local delta = b - a
   local length = point2d.length(a,b)
   local k = len / length
-  return delta * k + a
+  return a + delta * k
 end
 
-function point2d.byPointM(a,b, len) ---@return cpt.Point
+function point2d.byPointM(a,b, len) ---@return mod.Point
   assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
   if len == 0 or a == b then return point2d.new(a:get()) end
   local delta = b - a
   local length = point2d.length(a,b)
   local k = math.max(0, math.min(1, len / length))
-  return delta * k + a
+  return a + delta * k
 end
 
-function point2d.byRadian(a, rad, len) ---@return cpt.Point
+function point2d.byRadian(a, rad, len) ---@return mod.Point
   assert(a and rad and len, ("byRadian(%s, %s, %s)"):format(a, rad, len))
   if len == 0 then return point2d.new(a:get()) end
   local b = point2d.new(math.cos(rad), math.sin(rad))
   return b * len + a
 end
 
-function point2d.byDegree(a, deg, len) ---@return cpt.Point
+function point2d.byDegree(a, deg, len) ---@return mod.Point
   assert(a and deg and len, ("byRadian(%s, %s, %s)"):format(a, deg, len))
   if len == 0 then return point2d.new(a:get()) end
   local rad = deg * math.pi / 180
@@ -147,7 +143,7 @@ function point2d.byDegree(a, deg, len) ---@return cpt.Point
 end
 
 
---------------------------------------------------
+-- 
 
 mtPoint.__index = Point
 mtPoint.__add = add
@@ -163,11 +159,11 @@ mtPoint.__eq = eq
 return point2d
 
 
----@class cpt.Point
----@operator add:cpt.Point
----@operator sub:cpt.Point
----@operator mul:cpt.Point
----@operator div:cpt.Point
----@operator mod:cpt.Point
----@operator pow:cpt.Point
----@operator unm:cpt.Point
+---@class mod.Point
+---@operator add:mod.Point
+---@operator sub:mod.Point
+---@operator mul:mod.Point
+---@operator div:mod.Point
+---@operator mod:mod.Point
+---@operator pow:mod.Point
+---@operator unm:mod.Point
