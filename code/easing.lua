@@ -9,7 +9,7 @@ local n1 = 7.5625
 
 local easing = {}
 
-function easing.easeOutBounce(x) if (x < 1 / d1) then return n1 * x * x elseif (x < 2 / d1) then return n1 * (x - 1.5 / d1) * x + 0.75 elseif (x < 2.5 / d1) then return n1 * (x - 2.25 / d1) * x + 0.9375 else return n1 * (x - 2.625 / d1) * x + 0.984375 end end
+function easing.easeOutBounce(x) if (x < 1 / d1) then return n1 * x ^ 2 elseif (x < 2 / d1) then return n1 * (x - 1.5 / d1) ^ 2 + 0.75 elseif (x < 2.5 / d1) then return n1 * (x - 2.25 / d1) ^ 2 + 0.9375 else return n1 * (x - 2.625 / d1) ^ 2 + 0.984375 end end
 function easing.easeInBounce(x) return 1 - easing.easeOutBounce(1 - x) end
 function easing.easeInOutBounce(x) return x < 0.5 and (1 - easing.easeOutBounce(1 - 2 * x)) / 2 or (1 + easing.easeOutBounce(2 * x - 1)) / 2 end
 
