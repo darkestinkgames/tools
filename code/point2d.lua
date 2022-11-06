@@ -1,11 +1,6 @@
 
 local point2d = {}
-
-local Point = { ---@class cpt.Point
-  x = 0,
-  y = 0,
-}
-
+local Point = {} ---@class cpt.Point
 local mtPoint = {}
 
 
@@ -146,22 +141,21 @@ function point2d.byDegree(a, deg, len) ---@return cpt.Point
   return point2d.byRadian(a, rad, len)
 end
 
+---@param list cpt.Point[]
+function point2d.unpack(list) ---@return number[]
+  local result = {}
+  for i, p in ipairs(list) do
+    result[#result+1] = p.x
+    result[#result+1] = p.y
+  end
+  return result
+end
+
 
 --------------------------------------------------
 
-mtPoint.__index = Point
-mtPoint.__add = add
-mtPoint.__sub = sub
-mtPoint.__mul = mul
-mtPoint.__div = div
-mtPoint.__mod = mod
-mtPoint.__pow = pow
-mtPoint.__unm = unm
-mtPoint.__eq = eq
-
-
-return point2d
-
+Point.x = 0
+Point.y = 0
 
 ---@class cpt.Point
 ---@operator add:cpt.Point
@@ -171,3 +165,15 @@ return point2d
 ---@operator mod:cpt.Point
 ---@operator pow:cpt.Point
 ---@operator unm:cpt.Point
+
+mtPoint.__index = Point
+mtPoint.__add   = add
+mtPoint.__sub   = sub
+mtPoint.__mul   = mul
+mtPoint.__div   = div
+mtPoint.__mod   = mod
+mtPoint.__pow   = pow
+mtPoint.__unm   = unm
+mtPoint.__eq    = eq
+
+return point2d
