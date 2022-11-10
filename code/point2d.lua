@@ -1,12 +1,12 @@
 
 local point2d = {}
-local Point = {} ---@class cpt.Point
+local Point = {} ---@class mod.Point2d
 local mtPoint = {}
 
 
 --------------------------------------------------
 
-local function check(a, b) ---@return cpt.Point, cpt.Point
+local function check(a, b) ---@return mod.Point2d, mod.Point2d
   if type(a) == "number" then a = point2d.new(a, a) end
   if type(b) == "number" then b = point2d.new(b, b) end
   assert(type(a) == "table" and type(b) == "table", "Only `table` or `number` to use!")
@@ -72,6 +72,14 @@ function Point:setP(pt)
   self.x,self.y = pt.x,pt.y
 end
 
+function Point:add(x,y)
+  self.x,self.y = self.x + x,self.y + y
+end
+
+function Point:addP(pt)
+  self.x,self.y = self.x + pt.x,self.y + pt.y
+end
+
 
 --------------------------------------------------
 
@@ -102,14 +110,14 @@ end
 
 -- 
 
-function point2d.new(x,y) ---@return cpt.Point
+function point2d.new(x,y) ---@return mod.Point2d
   return setmetatable({
     x = x,
     y = y,
   }, mtPoint)
 end
 
-function point2d.byPoint(a,b, len) ---@return cpt.Point
+function point2d.byPoint(a,b, len) ---@return mod.Point2d
   assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
   if len == 0 or a == b then return point2d.new(a:get()) end
   local delta = b - a
@@ -118,7 +126,7 @@ function point2d.byPoint(a,b, len) ---@return cpt.Point
   return delta * k + a
 end
 
-function point2d.byPointM(a,b, len) ---@return cpt.Point
+function point2d.byPointM(a,b, len) ---@return mod.Point2d
   assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
   if len == 0 or a == b then return point2d.new(a:get()) end
   local delta = b - a
@@ -127,28 +135,18 @@ function point2d.byPointM(a,b, len) ---@return cpt.Point
   return delta * k + a
 end
 
-function point2d.byRadian(a, rad, len) ---@return cpt.Point
+function point2d.byRadian(a, rad, len) ---@return mod.Point2d
   assert(a and rad and len, ("byRadian(%s, %s, %s)"):format(a, rad, len))
   if len == 0 then return point2d.new(a:get()) end
   local b = point2d.new(math.cos(rad), math.sin(rad))
   return b * len + a
 end
 
-function point2d.byDegree(a, deg, len) ---@return cpt.Point
+function point2d.byDegree(a, deg, len) ---@return mod.Point2d
   assert(a and deg and len, ("byRadian(%s, %s, %s)"):format(a, deg, len))
   if len == 0 then return point2d.new(a:get()) end
   local rad = deg * math.pi / 180
   return point2d.byRadian(a, rad, len)
-end
-
----@param list cpt.Point[]
-function point2d.unpack(list) ---@return number[]
-  local result = {}
-  for i, p in ipairs(list) do
-    result[#result+1] = p.x
-    result[#result+1] = p.y
-  end
-  return result
 end
 
 
@@ -157,14 +155,14 @@ end
 Point.x = 0
 Point.y = 0
 
----@class cpt.Point
----@operator add:cpt.Point
----@operator sub:cpt.Point
----@operator mul:cpt.Point
----@operator div:cpt.Point
----@operator mod:cpt.Point
----@operator pow:cpt.Point
----@operator unm:cpt.Point
+---@class mod.Point2d
+---@operator add:mod.Point2d
+---@operator sub:mod.Point2d
+---@operator mul:mod.Point2d
+---@operator div:mod.Point2d
+---@operator mod:mod.Point2d
+---@operator pow:mod.Point2d
+---@operator unm:mod.Point2d
 
 mtPoint.__index = Point
 mtPoint.__add   = add
