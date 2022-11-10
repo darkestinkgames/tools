@@ -24,6 +24,8 @@ function PathPoint.new(cell, grid, value)
   return setmetatable(obj, mtPathPoint)
 end
 
+
+
 PathPoint.cell = nil  ---@type map.Cell
 PathPoint.from = nil  ---@type map.PathPoint?
 

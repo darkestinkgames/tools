@@ -16,6 +16,8 @@ function Unit.new()end
 
 
 
+Unit.cell = nil ---@type map.Cell
+
 mtUnit.__index = Unit
 
 return setmetatable({}, mtUnit)
