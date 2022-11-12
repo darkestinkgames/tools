@@ -22,7 +22,6 @@ end
 function love.resize(w, h)
 end
 
-
 -- -- -- >>>
 
--- 
+local curv = require 'test/move_curva'

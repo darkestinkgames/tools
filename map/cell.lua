@@ -29,6 +29,11 @@ local function toKey(x,y)
   return ("x%sy%s"):format(x,y)
 end
 
+local function toScreen(grid)
+  return (grid - 1) * default_size
+end
+
+
 
 
 function Cell:draw()
@@ -60,7 +65,7 @@ function Cell:toScreen(grid)
   return (grid - 1) * self.size
 end
 
-function Cell:new(x,y, grid, tile)
+function Cell.new(x,y, grid, tile)
   local key = toKey(x,y)
   local pos = point2d.new(x,y)
   ---@type map.Cell
@@ -68,8 +73,8 @@ function Cell:new(x,y, grid, tile)
     key      = key,
     tile     = tile,
     grid     = pos,
-    screen   = self:toScreen(pos),
-    half     = self:toScreen(.5 + pos),
+    screen   = toScreen(pos),
+    half     = toScreen(.5 + pos),
     nearest  = {},
   }
   grid[key] = obj

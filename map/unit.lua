@@ -3,13 +3,13 @@ local pathpoint = require 'map/pathpoint'
 
 
 
-local Unit = {} ---@class map.Unit
-local mtUnit = {}
+local Unit    = {}  ---@class map.Unit
+local mtUnit  = {}
 
 
 
 function Unit:draw()end
-function Unit:getMoveCost()end
+function Unit:setCell()end
 function Unit:update()end
 function Unit:updMoveGrid()end
 function Unit.new()end
@@ -17,6 +17,7 @@ function Unit.new()end
 
 
 Unit.cell = nil ---@type map.Cell
+Unit.move = nil ---@type map.Cell
 
 mtUnit.__index = Unit
 
