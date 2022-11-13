@@ -1,5 +1,5 @@
-local point2d = require 'code/point2d'
-local pathpoint = require 'map/pathpoint'
+local Point2d = require 'code/point2d'
+local PathPoint = require 'map/pathpoint'
 
 
 
@@ -8,6 +8,8 @@ local Unit    = {}  ---@class map.Unit
 local mtUnit  = {}
 
 
+
+--#region » pathfinder parts
 
 local check_list  ---@type map.Cell[]
 
@@ -19,6 +21,7 @@ local from_val  ---@type number
 local into_val  ---@type number
 
 local f
+--#endregion
 
 
 
@@ -41,17 +44,17 @@ function Unit:getPathpointGrid(cell, range)
 
   if cell then
     from_ce = cell
-    pathpoint.add(cell, grid, 0)
+    PathPoint.add(cell, grid, 0)
   end
 
   check_list = {from_ce}
 
   repeat
     from_ce = check_list[f]
-    from_pp = grid[from_ce.key] or pathpoint.add(from_ce, grid)
+    from_pp = grid[from_ce.key] or PathPoint.add(from_ce, grid)
     for i, into_ce in ipairs(from_ce.nearest) do
       into_val  = from_pp.value + self:getMoveCost(into_ce)
-      into_pp   = grid[into_ce.key] or pathpoint.add(into_ce, grid)
+      into_pp   = grid[into_ce.key] or PathPoint.add(into_ce, grid)
       if    range >= into_val
       then  into_pp:initValueCheck(into_val, from_pp, check_list) end
     end
@@ -61,17 +64,17 @@ end
 
 ---comment
 ---@param cell map.Cell
----@param mov number?
----@param pass string?
----@param team number?
+---@param _mov number?
+---@param _pass string?
+---@param _team number?
 ---@return map.Unit
-function Unit.new(cell, mov, pass, team)
+function Unit.new(cell, _mov, _pass, _team)
   ---@class map.Unit
   local obj = {
     cell     = cell,
-    mov      = mov,
-    pass     = pass,
-    team     = team,
+    mov      = _mov,
+    pass     = _pass,
+    team     = _team,
     pp_grid  = {},
   }
   return setmetatable(obj, mtUnit)

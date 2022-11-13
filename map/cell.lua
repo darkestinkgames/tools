@@ -3,7 +3,7 @@ local setColor   = love.graphics.setColor
 
 
 
-local point2d = require 'code/point2d'
+local Point2d = require 'mod/point2d'
 
 
 
@@ -12,7 +12,7 @@ local mtCell = {}
 
 
 
-local default_size = point2d.new(48,48)
+local default_size = Point2d.new(64,48)
 
 local tile_color = {
   plain = {.1, .25, .15},
@@ -41,6 +41,8 @@ function Cell:draw()
   local w,h = self.size:get()
   setColor(tile_color[self.tile])
   rectangle("fill", x,y, w,h)
+  setColor(1,1,1, .2)
+  rectangle("line", x,y, w,h)
 end
 
 function Cell:setNearest(grid)
@@ -65,13 +67,13 @@ function Cell:toScreen(grid)
   return (grid - 1) * self.size
 end
 
-function Cell.add(x,y, grid, tile)
+function Cell.add(x,y, grid, _tile)
   local key = toKey(x,y)
-  local pos = point2d.new(x,y)
+  local pos = Point2d.new(x,y)
   ---@type map.Cell
   local obj = {
     key      = key,
-    tile     = tile,
+    tile     = _tile,
     grid     = pos,
     screen   = toScreen(pos),
     half     = toScreen(.5 + pos),

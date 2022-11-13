@@ -1,4 +1,3 @@
-
 local PathPoint = {} ---@class map.PathPoint
 local mtPathPoint = {}
 
@@ -11,16 +10,16 @@ function PathPoint:initValueCheck(value, from, check_list)
   end
 end
 
-function PathPoint.add(cell, grid, value)
+function PathPoint.add(cell, pp_grid, _value)
   local key = cell.key
 
   ---@type map.PathPoint
   local obj = {
     cell = cell,
-    value = value,
+    value = _value,
   }
 
-  grid[key] = obj
+  pp_grid[key] = obj
   return setmetatable(obj, mtPathPoint)
 end
 
