@@ -65,7 +65,7 @@ function Cell:toScreen(grid)
   return (grid - 1) * self.size
 end
 
-function Cell.new(x,y, grid, tile)
+function Cell.add(x,y, grid, tile)
   local key = toKey(x,y)
   local pos = point2d.new(x,y)
   ---@type map.Cell

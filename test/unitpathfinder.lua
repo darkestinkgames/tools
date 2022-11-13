@@ -35,10 +35,10 @@ function PathFinder:getGrid(cell, range) ---@param cell map.Cell
 
   repeat
     from_ce = check_list[f]
-    from_pp = grid[from_ce.key] or PathPoint.new(from_ce, grid, 0)
+    from_pp = grid[from_ce.key] or PathPoint.add(from_ce, grid, 0)
     for i, into_ce in ipairs(from_ce.nearest) do
       into_val  = from_pp.value + self:getCost(into_ce)
-      into_pp   = grid[into_ce.key] or PathPoint.new(into_ce, grid)
+      into_pp   = grid[into_ce.key] or PathPoint.add(into_ce, grid)
       if   range >= into_val
       then into_pp:setValueCheck(into_val, from_pp, check_list) end
     end
@@ -47,18 +47,18 @@ function PathFinder:getGrid(cell, range) ---@param cell map.Cell
 end
 
 function PathFinder:getCost(into_ce) ---@param into_ce map.Cell
-  local impass = self.unit.move + 1
+  local impass = self.unit.mov + 1
   -- todo
   return 1
 end
 
-function PathPoint.new(unit)
+function PathFinder.add(unit) ---@param unit map.Unit
   ---@type map.PathFinder
-  local obj = {
+  unit.pathfinder = {
     unit = unit,
     grid = {},
   }
-  return setmetatable(obj, mtPathFinder)
+  return setmetatable(unit.pathfinder, mtPathFinder)
 end
 
 

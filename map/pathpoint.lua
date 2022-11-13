@@ -11,7 +11,7 @@ function PathPoint:setValueCheck(value, from, check_list)
   end
 end
 
-function PathPoint.new(cell, grid, value)
+function PathPoint.add(cell, grid, value)
   local key = cell.key
 
   ---@type map.PathPoint
