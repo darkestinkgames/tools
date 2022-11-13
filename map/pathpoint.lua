@@ -4,7 +4,7 @@ local mtPathPoint = {}
 
 
 
-function PathPoint:setValueCheck(value, from, check_list)
+function PathPoint:initValueCheck(value, from, check_list)
   if self.value > value then
     self.value, self.from = value, from
     check_list[#check_list+1] = self.cell

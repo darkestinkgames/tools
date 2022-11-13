@@ -7,7 +7,7 @@ local mtPathFinder = {}
 
 
 
-local check_list = {} ---@type map.Cell[]
+local check_list  ---@type map.Cell[]
 
 local grid      ---@type table<string, map.PathPoint>
 local from_ce   ---@type map.Cell
@@ -40,7 +40,36 @@ function PathFinder:getGrid(cell, range) ---@param cell map.Cell
       into_val  = from_pp.value + self:getCost(into_ce)
       into_pp   = grid[into_ce.key] or PathPoint.add(into_ce, grid)
       if   range >= into_val
-      then into_pp:setValueCheck(into_val, from_pp, check_list) end
+      then into_pp:initValueCheck(into_val, from_pp, check_list) end
+    end
+    f = f + 1
+  until check_list[f]
+end
+
+---comment
+---@param unit map.Unit
+---@param cell map.Cell?
+---@param range number?
+function PathFinder.update(unit, cell, range)
+  grid     = unit.pp_grid
+  from_ce  = cell or unit.cell
+  from_pp  = grid[from_ce.key]
+  range    = range or math.huge
+
+  clear(grid)
+  check_list = {from_ce}
+  grid[from_ce.key] = from_pp -- може бути `nil`
+
+  local f = 1
+
+  repeat
+    from_ce = check_list[f]
+    from_pp = grid[from_ce.key] or PathPoint.add(from_ce, grid, 0)
+    for i, into_ce in ipairs(from_ce.nearest) do
+      into_val  = from_pp.value + unit:getMoveCost(into_ce)
+      into_pp   = grid[into_ce.key] or PathPoint.add(into_ce, grid)
+      if   range >= into_val
+      then into_pp:initValueCheck(into_val, from_pp, check_list) end
     end
     f = f + 1
   until check_list[f]
