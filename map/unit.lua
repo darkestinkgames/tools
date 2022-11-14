@@ -1,6 +1,5 @@
 local point2d     = require 'code/point2d'
-local pathpoint   = require 'map/pathpoint'
-local pathfinder  = require 'map/pathfinder'
+local pathpoint   = require 'map/pathpoint2'
 
 
 

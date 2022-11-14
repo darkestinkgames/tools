@@ -9,10 +9,10 @@ local mtPathFinder = {}
 
 local check_list  ---@type map.Cell[]
 
-local grid      ---@type table<string, map.PathPoint>
+local grid      ---@type table<string, map.PathPoint2>
 local from_ce   ---@type map.Cell
-local from_pp   ---@type map.PathPoint
-local into_pp   ---@type map.PathPoint
+local from_pp   ---@type map.PathPoint2
+local into_pp   ---@type map.PathPoint2
 local from_val  ---@type number
 local into_val  ---@type number
 
@@ -93,7 +93,7 @@ end
 
 
 PathFinder.unit = nil  ---@type map.Unit
-PathFinder.grid = nil  ---@type table<string, map.PathPoint>
+PathFinder.grid = nil  ---@type table<string, map.PathPoint2>
 
 mtPathFinder.__index = PathFinder
 
