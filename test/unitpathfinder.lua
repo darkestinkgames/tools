@@ -2,7 +2,7 @@ local PathPoint = require 'map/pathpoint'
 
 
 
-local PathFinder = {} ---@class map.PathFinder
+local PathFinder = {} ---@class map.PathFinder1
 local mtPathFinder = {}
 
 
@@ -82,7 +82,7 @@ function PathFinder:getCost(into_ce) ---@param into_ce map.Cell
 end
 
 function PathFinder.add(unit) ---@param unit map.Unit
-  ---@type map.PathFinder
+  ---@type map.PathFinder1
   unit.pathfinder = {
     unit = unit,
     grid = {},

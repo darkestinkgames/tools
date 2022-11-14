@@ -1,27 +1,11 @@
-local Point2d = require 'code/point2d'
-local PathPoint = require 'map/pathpoint'
-
+local point2d     = require 'code/point2d'
+local pathpoint   = require 'map/pathpoint'
+local pathfinder  = require 'map/pathfinder'
 
 
 
 local Unit    = {}  ---@class map.Unit
 local mtUnit  = {}
-
-
-
---#region » pathfinder parts
-
-local check_list  ---@type map.Cell[]
-
-local grid      ---@type table<string, map.PathPoint>
-local from_ce   ---@type map.Cell
-local from_pp   ---@type map.PathPoint
-local into_pp   ---@type map.PathPoint
-local from_val  ---@type number
-local into_val  ---@type number
-
-local f
---#endregion
 
 
 
@@ -33,34 +17,18 @@ end
 
 function Unit:draw()end
 function Unit:setCell()end
-function Unit:getMoveCost(cell)end
-function Unit:update(dt)end
 
-function Unit:getPathpointGrid(cell, range)
-  grid     = {}
-  from_ce  = self.cell
-  range    = range or math.huge
-  f        = 1
-
-  if cell then
-    from_ce = cell
-    PathPoint.add(cell, grid, 0)
-  end
-
-  check_list = {from_ce}
-
-  repeat
-    from_ce = check_list[f]
-    from_pp = grid[from_ce.key] or PathPoint.add(from_ce, grid)
-    for i, into_ce in ipairs(from_ce.nearest) do
-      into_val  = from_pp.value + self:getMoveCost(into_ce)
-      into_pp   = grid[into_ce.key] or PathPoint.add(into_ce, grid)
-      if    range >= into_val
-      then  into_pp:initValueCheck(into_val, from_pp, check_list) end
-    end
-    f = f + 1
-  until check_list[f]
+function Unit:getMoveCost(cell) ---@param cell map.Cell
+  local impass = self.mov + 1
+  local u = cell.unit
+  if u then if u == self then
+    return 1
+  else
+    return impass
+  end end
 end
+
+function Unit:update(dt)end
 
 ---comment
 ---@param cell map.Cell
@@ -83,7 +51,6 @@ end
 
 
 Unit.cell        = nil  ---@type map.Cell
-Unit.pathfinder  = nil  ---@type map.PathFinder
 Unit.pp_grid     = nil  ---@type table<string, map.PathPoint>
 
 Unit.team        = 2
