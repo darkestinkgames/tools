@@ -80,6 +80,10 @@ function Point:addP(pt)
   self.x,self.y = self.x + pt.x,self.y + pt.y
 end
 
+function Point:clone()
+  return point2d.new(self:get())
+end
+
 
 --------------------------------------------------
 

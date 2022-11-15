@@ -1,10 +1,24 @@
+local circle = love.graphics.circle
+local setColor = love.graphics.setColor
+
+
+
 local point2d     = require 'code/point2d'
-local pathpoint   = require 'map/pathpoint2'
+local pathpoint   = require 'map/pathpoint'
 
 
 
 local Unit    = {}  ---@class map.Unit
 local mtUnit  = {}
+
+
+
+local radius = 20
+
+local team_color = {
+  { .2, .8, .2 },
+  { .8, .2, .2 },
+}
 
 
 
@@ -14,13 +28,23 @@ end
 
 
 
-function Unit:draw()end
+function Unit:draw()
+  local x,y = self.screen:get()
+  setColor(team_color[self.team])
+  circle("fill", x,y, radius)
+  setColor(1,1,1, .2)
+  circle("line", x,y, radius)
+end
 
 function Unit:setCell(cell) ---@param cell map.Cell
   assert(cell)
-  assert(cell.unit)
+  assert(not cell.unit)
   self.cell.unit = nil
   cell.unit, self.cell = self, cell
+end
+
+function Unit:setPath(cell) ---@param cell map.Cell
+  
 end
 
 function Unit:getPathpoint(cell) ---@param cell map.Cell
@@ -30,13 +54,17 @@ function Unit:getPathpoint(cell) ---@param cell map.Cell
 end
 
 function Unit:getMoveCost(cell) ---@param cell map.Cell
+  assert(cell)
   local impass = self.mov + 1
+
   local u = cell.unit
   if u then if u == self then
     return 1
   else
     return impass
   end end
+
+  return 1
 end
 
 function Unit:update(dt)end
@@ -51,6 +79,7 @@ function Unit.new(cell, _mov, _pass, _team)
   ---@class map.Unit
   local obj = {
     cell     = cell,
+    screen   = cell.half:clone(),
     mov      = _mov,
     pass     = _pass,
     team     = _team,
