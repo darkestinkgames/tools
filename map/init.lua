@@ -9,7 +9,7 @@ local mtMap = {}
 
 
 
-function Map:onMouse(x, y, button, istouch, presses)end
+function Map:onMouse(x, y, button)end
 function Map:update(dt)end
 function Map:add(x,y)end
 

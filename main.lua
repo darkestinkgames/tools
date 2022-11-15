@@ -22,7 +22,7 @@ function love.mousepressed(x, y, button, istouch, presses)
   end
   if button == 2 then
   end
-  map:onMouse(x, y, button, istouch, presses)
+  map:onMouse(x, y, button)
 end
 function love.wheelmoved( x , y )
 end

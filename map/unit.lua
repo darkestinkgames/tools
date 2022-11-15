@@ -15,8 +15,19 @@ end
 
 
 function Unit:draw()end
-function Unit:setCell(cell)end
-function Unit:get(cell)end
+
+function Unit:setCell(cell) ---@param cell map.Cell
+  assert(cell)
+  assert(cell.unit)
+  self.cell.unit = nil
+  cell.unit, self.cell = self, cell
+end
+
+function Unit:getPathpoint(cell) ---@param cell map.Cell
+  assert(cell)
+  assert(self.pp_grid[cell.key])
+  return self.pp_grid[cell.key]
+end
 
 function Unit:getMoveCost(cell) ---@param cell map.Cell
   local impass = self.mov + 1
