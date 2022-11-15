@@ -15,7 +15,8 @@ end
 
 
 function Unit:draw()end
-function Unit:setCell()end
+function Unit:setCell(cell)end
+function Unit:get(cell)end
 
 function Unit:getMoveCost(cell) ---@param cell map.Cell
   local impass = self.mov + 1
