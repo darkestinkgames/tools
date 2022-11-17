@@ -84,7 +84,7 @@ function pathpoint.grid(unit, _cell, _range)
   return result
 end
 
----крива по точках (початок з кінця)
+---крива по точках
 ---@param pp map.PathPoint
 ---@return love.BezierCurve
 function pathpoint.curve(pp)
@@ -96,11 +96,15 @@ function pathpoint.curve(pp)
     x2 = vertices[#vertices-2]
     if x2 then
       y2 = vertices[#vertices]-1
-      vertices[#vertices+1] = (x + x2) / 2
       vertices[#vertices+1] = (y + y2) / 2
+      vertices[#vertices+1] = (x + x2) / 2
     end
-    vertices[#vertices+1] = x
     vertices[#vertices+1] = y
+    vertices[#vertices+1] = x
+  end
+  for i = 1, #vertices/2 do
+    x = #vertices - i + 1
+    vertices[i], vertices[x] = vertices[x], vertices[i]
   end
   return love.math.newBezierCurve(vertices)
 end

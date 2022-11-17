@@ -3,10 +3,13 @@ local setColor = love.graphics.setColor
 
 
 
-local point2d     = require 'code/point2d'
+local point2d     = require 'mod/point2d'
 local pathpoint   = require 'map/pathpoint'
+local unitscreen  = require 'test/unitscreen'
 
 
+
+local main = {}
 
 local Unit    = {}  ---@class map.Unit
 local mtUnit  = {}
@@ -43,8 +46,9 @@ function Unit:setCell(cell) ---@param cell map.Cell
   cell.unit, self.cell = self, cell
 end
 
-function Unit:setPath(cell) ---@param cell map.Cell
-  
+function Unit:move(cell) ---@param cell map.Cell
+  self.screen:setPath(self:getPathpoint(cell))
+  self:setCell(cell)
 end
 
 function Unit:getPathpoint(cell) ---@param cell map.Cell
@@ -67,7 +71,9 @@ function Unit:getMoveCost(cell) ---@param cell map.Cell
   return 1
 end
 
-function Unit:update(dt)end
+function Unit:update(dt)
+  self.screen:update(dt)
+end
 
 ---comment
 ---@param cell map.Cell
@@ -76,27 +82,27 @@ function Unit:update(dt)end
 ---@param _team number?
 ---@return map.Unit
 function Unit.new(cell, _mov, _pass, _team)
-  ---@class map.Unit
-  local obj = {
+  return setmetatable({
     cell     = cell,
-    screen   = cell.half:clone(),
+    screen   = unitscreen.new(cell.half:get()),
     mov      = _mov,
     pass     = _pass,
     team     = _team,
     pp_grid  = {},
-  }
-  return setmetatable(obj, mtUnit)
+  }, mtUnit)
 end
 
 
 
-Unit.cell        = nil  ---@type map.Cell
-Unit.pp_grid     = nil  ---@type table<string, map.PathPoint>
+Unit.cell     = nil  ---@type map.Cell
+Unit.screen   = nil  ---@type map.UnitScreen
+Unit.pp_grid  = nil  ---@type table<string, map.PathPoint>
 
-Unit.team        = 2
-Unit.pass        = "walk"
-Unit.mov         = 3
+Unit.mov   = 3
+Unit.pass  = "walk"
+Unit.team  = 2
 
 mtUnit.__index = Unit
+
 
 return setmetatable({}, mtUnit)

@@ -1,7 +1,8 @@
 
 local point2d = {}
-local Point = {} ---@class mod.Point2d
-local mtPoint = {}
+
+local Point    = {} ---@class mod.Point2d
+local mtPoint  = {}
 
 
 --------------------------------------------------
@@ -156,8 +157,8 @@ end
 
 --------------------------------------------------
 
-Point.x = 0
-Point.y = 0
+Point.x = 0  ---@type number
+Point.y = 0  ---@type number
 
 ---@class mod.Point2d
 ---@operator add:mod.Point2d

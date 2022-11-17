@@ -1,29 +1,27 @@
-local Point2d = require 'mod/point2d'
+local point2d = require 'mod/point2d'
 
-local Cell = require 'map/cell'
-
-
-
-local Map = {} ---@class game.Map
-local mtMap = {}
+local cell = require 'map/cell'
+local unit = require 'map/unit'
 
 
 
-function Map:onMouse(x, y, button)end
-function Map:update(dt)end
-function Map:add(x,y)end
+local main = {}
 
-function Map:draw()
-  for  k, c in pairs(self.cell_grid)
-  do   c:draw() end
-end
+local Map = { ---@class game.Map
+  state      = nil,  ---@type string
+  cell_grid  = nil,  ---@type table<string, map.Cell>
+  unit_list  = nil,  ---@type map.Unit[]
+}
+local mtMap  = {}
 
-function Map.new(w,h)
-  local size = Point2d.new(w,h)
+
+
+function main.new(w,h)
+  local size = point2d.new(w,h)
   local grid = {} ---@type table<string, map.Cell>
 
   for y = 1, size.y do for x = 1, size.x do
-    Cell.add(x,y, grid)
+    cell.add(x,y, grid)
   end end
   for k, c in pairs(grid) do
     c:setNearest(grid)
@@ -39,11 +37,34 @@ function Map.new(w,h)
 end
 
 
+function Map:onMouse(x, y, button)
+  if button == 2 then
+    self:addUnit( self:getCell(x,y) )
+  end
+end
 
-Map.state  = nil  ---@type string
-Map.cell   = nil  ---@type map.Cell?
-Map.unit   = nil  ---@type map.Unit?
+function Map:update(dt)end
+
+function Map:getCell(x,y)
+  x,y = cell:getGrid(x,y)
+  return self.cell_grid[cell:toKey(x,y)]
+end
+
+function Map:addUnit(c) ---@param c map.Cell
+  local u = unit.new(c)
+  c.unit = u
+  self.unit_list[#self.unit_list+1] = u
+end
+
+function Map:draw()
+  for  k, c in pairs(self.cell_grid)
+  do   c:draw() end
+  for  i, u in ipairs(self.unit_list)
+  do   u:draw() end
+end
+
+
 
 mtMap.__index = Map
 
-return setmetatable({}, mtMap)
+return main

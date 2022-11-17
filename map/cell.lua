@@ -3,7 +3,7 @@ local setColor   = love.graphics.setColor
 
 
 
-local Point2d = require 'mod/point2d'
+local point2d = require 'mod/point2d'
 
 
 
@@ -12,7 +12,7 @@ local mtCell = {}
 
 
 
-local default_size = Point2d.new(64,48)
+local default_size = point2d.new(64,48)
 
 local tile_color = {
   plain = {.1, .25, .15},
@@ -59,17 +59,26 @@ function Cell:getUnit()
   return self.unit
 end
 
-function Cell:toGrid(screen)
-  return (screen - screen % self.size) / self.size + 1
+function Cell:toKey(x,y)
+  return ("x%sy%s"):format(x,y)
 end
 
-function Cell:toScreen(grid)
-  return (grid - 1) * self.size
+function Cell:toGridPt(screen_pt)
+  return (screen_pt - screen_pt % self.size) / self.size + 1
+end
+
+function Cell:getGrid(x,y)
+  local pt = point2d.new(x,y)
+  return self:toGridPt(pt):get()
+end
+
+function Cell:toScreenPt(grid_pt)
+  return (grid_pt - 1) * self.size
 end
 
 function Cell.add(x,y, grid, _tile)
   local key = toKey(x,y)
-  local pos = Point2d.new(x,y)
+  local pos = point2d.new(x,y)
   ---@type map.Cell
   local obj = {
     key      = key,
