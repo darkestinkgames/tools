@@ -131,7 +131,7 @@ function point2d.byPoint(a,b, len) ---@return mod.Point2d
   return delta * k + a
 end
 
-function point2d.byPointM(a,b, len) ---@return mod.Point2d
+function point2d.byPointMax(a,b, len) ---@return mod.Point2d
   assert(a and b and len, ("byPoint(%s,%s, %s)"):format(a,b, len))
   if len == 0 or a == b then return point2d.new(a:get()) end
   local delta = b - a

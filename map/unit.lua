@@ -39,6 +39,14 @@ function Unit:draw()
   circle("line", x,y, radius)
 end
 
+function Unit:drawGrid()
+  for k, pp in pairs(self.pp_grid) do
+    local x,y = pp.cell.half:get()
+    circle("fill", x,y, 4)
+    love.graphics.print(pp.value, x,y)
+  end
+end
+
 function Unit:setCell(cell) ---@param cell map.Cell
   assert(cell)
   assert(not cell.unit)
@@ -59,13 +67,11 @@ end
 
 function Unit:getMoveCost(cell) ---@param cell map.Cell
   assert(cell)
-  local impass = self.mov + 1
-
   local u = cell.unit
   if u then if u == self then
     return 1
   else
-    return impass
+    return self.impass
   end end
 
   return 1
@@ -97,6 +103,7 @@ end
 Unit.cell     = nil  ---@type map.Cell
 Unit.screen   = nil  ---@type map.UnitScreen
 Unit.pp_grid  = nil  ---@type table<string, map.PathPoint>
+Unit.impass   = nil
 
 Unit.mov   = 3
 Unit.pass  = "walk"

@@ -68,9 +68,9 @@ function pathpoint.grid(unit, _cell, _range)
   result[from_ce.key] = _cell and unit.pp_grid[_cell.key] or pathpoint.new(from_ce, 0)
   f = 1
 
-  repeat
+  while check_list[f] do
     from_ce = check_list[f]
-    from_pp = result[from_ce.key] or pathpoint.add(from_ce, result)
+    from_pp = result[from_ce.key] -- or pathpoint.add(from_ce, result)
     for i, into_ce in ipairs(from_ce.nearest) do
       into_val = from_pp.value + unit:getMoveCost(into_ce)
       if max_val >= into_val then
@@ -79,7 +79,7 @@ function pathpoint.grid(unit, _cell, _range)
       end
     end
     f = f + 1
-  until check_list[f]
+  end
 
   return result
 end
