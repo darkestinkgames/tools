@@ -7,6 +7,16 @@ GSTATE.intro_gs = switchme
 
 ]]
 
+--[[ main.lua
+
+function love.load(...)
+  require 'GSTATE'
+  require 'intro_gs'
+  GSTATE.intro_gs()
+end
+
+]]
+
 local NewState
 do -- 
 

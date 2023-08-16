@@ -1,5 +1,9 @@
 
-local point2d = {}
+---@class main.point2d
+---@overload fun(x:number?, y:number?):mod.Point2d
+local point2d = {
+  __README = 'Simple 2D-point-based module by Darkest Ink Games'
+}
 
 local Point    = {} ---@class mod.Point2d
 local mtPoint  = {}
@@ -12,6 +16,10 @@ local function check(a, b) ---@return mod.Point2d, mod.Point2d
   if type(b) == "number" then b = point2d.new(b, b) end
   assert(type(a) == "table" and type(b) == "table", "Only `table` or `number` to use!")
   return a, b
+end
+
+local function call(self, x,y)
+  return point2d.new(x,y)
 end
 
 -- 
@@ -179,4 +187,5 @@ mtPoint.__pow   = pow
 mtPoint.__unm   = unm
 mtPoint.__eq    = eq
 
-return point2d
+return setmetatable(point2d , {__call = call})
+
