@@ -2,8 +2,7 @@
 --[[ intro_gs.lua
 
 local intro_gs = GSTATE.new()
-local switchme = function () GSTATE.switch(intro_gs) end
-GSTATE.intro_gs = switchme
+function GSTATE.intro_gs() GSTATE.switch(intro_gs) end
 
 ]]
 
