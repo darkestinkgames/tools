@@ -2,7 +2,7 @@
 --[[ intro_gs.lua
 
 local intro_gs = GSTATE.new()
-function GSTATE.intro_gs() GSTATE.switch(intro_gs) end
+function GSTATE.intro_gs(...) GSTATE.switch(intro_gs, ...) end
 
 ]]
 
@@ -152,7 +152,7 @@ end --
 
 
 
-local function Switch(gs)
+local function Switch(gs, ...)
 
   love.draw      = gs.draw
   love.lowmemory = gs.lowmemory
@@ -177,7 +177,7 @@ local function Switch(gs)
   love.mousereleased = gs.mousereleased
   love.wheelmoved    = gs.wheelmoved
 
-  gs.onstart()
+  gs.onstart(...)
 
 end
 
